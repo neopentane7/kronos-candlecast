@@ -49,3 +49,23 @@ def test_future_sessions_refuses_to_run_past_published_holidays():
     last = nse_calendar().last_session
     with pytest.raises(ValueError, match="holiday list"):
         future_sessions(last, 30)
+
+
+# Enough runway to forecast a 30-session horizon and still have time to react.
+MIN_CALENDAR_RUNWAY_MONTHS = 4
+
+
+def test_calendar_has_runway_left():
+    """Fail before the packaged holiday list runs out, not after.
+
+    ``exchange_calendars`` ships a finite holiday list. When it expires, the nightly
+    job cannot generate forecast timestamps at all. This test turns that from an
+    incident with a known date into a build failure with lead time: when it goes red,
+    upgrade ``exchange_calendars``.
+    """
+    last = nse_calendar().last_session
+    runway = last - pd.Timestamp.now().normalize()
+    assert runway > pd.Timedelta(days=30 * MIN_CALENDAR_RUNWAY_MONTHS), (
+        f"{NSE_CALENDAR_CODE} holiday list ends {last.date()}, only {runway.days} days "
+        f"away. Upgrade exchange_calendars to pick up the next year's holidays."
+    )

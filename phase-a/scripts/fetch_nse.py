@@ -39,10 +39,12 @@ from common.splits import CORPUS_START, SPLITS, slice_split  # noqa: E402
 DATA_ROOT = REPO_ROOT / "data" / "parquet"
 MANIFEST_PATH = REPO_ROOT / "data" / "manifest.json"
 
-# 55 liquid NIFTY-100 constituents with continuous history from 2018, giving margin over
-# the >=45-ticker acceptance bar. NSE symbols; yfinance needs the `.NS` suffix.
+# Survivors: liquid names that are NIFTY-100 constituents today. Selecting only these
+# and backfilling to 2018 is survivorship bias, which is why SURVIVORSHIP_ADDITIONS
+# below exists -- see the note there before editing either list.
+# NSE symbols; yfinance needs the `.NS` suffix.
 # fmt: off
-UNIVERSE = [
+CURRENT_CONSTITUENTS = [
     "RELIANCE", "TCS", "HDFCBANK", "ICICIBANK", "INFY",
     "HINDUNILVR", "ITC", "SBIN", "BHARTIARTL", "KOTAKBANK",
     "LT", "AXISBANK", "BAJFINANCE", "ASIANPAINT", "MARUTI",
@@ -57,6 +59,32 @@ UNIVERSE = [
     "GODREJCP", "HAVELLS", "SIEMENS", "DMART", "VEDL",
     "GAIL", "IOC", "BPCL", "AMBUJACEM", "MARICO",
 ]
+
+# Names that WERE NIFTY-100 constituents during 2018-2021 and subsequently collapsed,
+# were de-rated, or left the index. Without them the panel silently excludes exactly the
+# regimes a calibration study most needs to be honest about.
+#
+# Measured, on the same 2018-2026 window:
+#
+#   YESBANK     12 bars moving >20%, max drawdown -97.3%
+#   IDEA        20 bars moving >20%, max drawdown -95.8%
+#   ZEEL         5 bars moving >20%, max drawdown -88.9%
+#   BANDHANBNK   2 bars moving >20%, max drawdown -82.1%
+#   RBLBANK      2 bars moving >20%, max drawdown -89.0%
+#
+# For comparison the 54 survivors contribute 17 such bars in total across 113,068 rows.
+# These five roughly triple the tail population for under 10% more data, and all pass
+# the canonical schema unmodified -- nothing technical excluded them, only the choice
+# of universe.
+#
+# This is NOT a true point-in-time reconstruction, which would need historical index
+# membership tables that are not freely available. It is a documented approximation and
+# must be described as such wherever coverage numbers are published.
+SURVIVORSHIP_ADDITIONS = [
+    "YESBANK", "IDEA", "ZEEL", "BANDHANBNK", "RBLBANK",
+]
+
+UNIVERSE = CURRENT_CONSTITUENTS + SURVIVORSHIP_ADDITIONS
 # fmt: on
 
 MIN_ROWS = 1400  # acceptance bar per ticker
@@ -224,8 +252,30 @@ def main() -> int:
         "requested_range": [args.start, args.end],
         "canonical_source": "yfinance",
         "adjustment_policy": "split_bonus_adjusted (see common/preprocess.py)",
+        # Back-adjusted history is not stable over time: a future split retroactively
+        # rewrites every earlier bar. Two corpora fetched on different dates are
+        # therefore NOT interchangeable, so the fetch date is part of the corpus
+        # identity and any result must cite it alongside the commit sha.
+        "downloaded_at": datetime.now().astimezone().isoformat(),
+        "adjustment_stability_note": (
+            "Prices are back-adjusted as of downloaded_at. A corporate action after "
+            "that date will change the adjusted history for affected tickers; re-fetch "
+            "and re-run rather than mixing corpora across fetch dates."
+        ),
         "amount_definition": "close * volume (hard constraint 4)",
         "splits": SPLITS,
+        "universe": {
+            "current_constituents": len(CURRENT_CONSTITUENTS),
+            "survivorship_additions": SURVIVORSHIP_ADDITIONS,
+            "point_in_time": False,
+            "note": (
+                "Approximate, not point-in-time. Current index constituents plus named "
+                "2018-2021 members that later collapsed or left the index. True "
+                "point-in-time reconstruction needs historical membership tables that "
+                "are not freely available. Residual survivorship bias remains and must "
+                "be disclosed wherever coverage numbers are published."
+            ),
+        },
         "tickers_requested": len(tickers),
         "tickers_written": len(entries),
         "tickers_skipped": len(skipped),
