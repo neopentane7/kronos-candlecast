@@ -1,0 +1,6 @@
+# Normalize to LF in the repository so the Linux CI runner and this Windows working
+# copy agree. PowerShell scripts stay CRLF, which is what Windows tooling expects.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.png binary
+*.parquet binary

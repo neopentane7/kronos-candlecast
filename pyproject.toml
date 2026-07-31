@@ -1,0 +1,63 @@
+[project]
+name = "kronos-candlecast"
+version = "0.1.0"
+description = "Kronos-small fine-tuned + conformally calibrated on NSE data, and the CandleCast forecast product built on it."
+readme = "README.md"
+requires-python = ">=3.10,<3.11"
+dependencies = [
+    # --- upstream Kronos runtime (phase-a/Kronos/requirements.txt) ---
+    "torch==2.5.1",
+    "numpy>=1.26,<2",
+    "pandas==2.2.2",
+    "einops==0.8.1",
+    "huggingface-hub==0.33.1",
+    "matplotlib==3.9.3",
+    "tqdm==4.67.1",
+    "safetensors==0.6.2",
+    # --- data acquisition + storage ---
+    "jugaad-data>=0.26",
+    "yfinance>=0.2.40",
+    "duckdb>=1.0",
+    "pyarrow>=16",
+    "exchange-calendars>=4.5",
+    "pandera>=0.20",
+    # --- eval / calibration ---
+    "scoringrules>=0.7",
+    "mapie>=0.9",
+    # --- experiment tracking ---
+    "wandb>=0.17",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.6",
+    "pytest>=8.0",
+    "pre-commit>=3.7",
+]
+
+# Torch must come from the CUDA 12.1 wheel index, not PyPI (PyPI ships the
+# CPU-only build on Windows). `explicit = true` keeps every other package on PyPI.
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu121" }
+
+# This repo is a monorepo of scripts, not an installable library.
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+# Upstream clone is read-only (working rule 5) — never lint or format it.
+extend-exclude = ["phase-a/Kronos", "results"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

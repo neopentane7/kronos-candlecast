@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kronos-NSE / CandleCast — Project Status Report</title>
+<style>
+  :root {
+    /* Neutrals carry a faint cyan bias, tuned to the accent rather than inherited grey. */
+    --paper:      #F5F8F8;
+    --surface:    #FFFFFF;
+    --surface-2:  #EDF2F2;
+    --rule:       #D7E0E1;
+    --ink:        #121A1D;
+    --ink-2:      #3D4E54;
+    --ink-3:      #6C8288;
+
+    /* Instrumentation teal: measurement, not money-green or alert-red. */
+    --accent:     #0B6E7F;
+    --accent-2:   #0E8A9E;
+    --accent-wash:#E2EFF1;
+
+    /* Semantic status, deliberately separate from the accent hue. */
+    --ok:         #2E6F4E;
+    --ok-wash:    #E4EFE8;
+    --warn:       #96650B;
+    --warn-wash:  #F5EDDC;
+    --crit:       #9E3A31;
+    --crit-wash:  #F5E4E2;
+
+    --shadow: 0 1px 2px rgba(18,26,29,.05), 0 8px 24px -12px rgba(18,26,29,.14);
+
+    --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+    --body: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+
+    --fs-xs: .75rem;   --fs-sm: .8125rem;  --fs-base: 1rem;
+    --fs-lg: 1.0625rem; --fs-xl: 1.3125rem; --fs-2xl: 1.75rem; --fs-3xl: 2.375rem;
+
+    --measure: 68ch;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:      #0D1416;
+      --surface:    #131D20;
+      --surface-2:  #18262A;
+      --rule:       #26383D;
+      --ink:        #E8EFEF;
+      --ink-2:      #B2C4C7;
+      --ink-3:      #7D9297;
+
+      --accent:     #4FB8CC;
+      --accent-2:   #7FD3E2;
+      --accent-wash:#122E36;
+
+      --ok:         #6FBF90;
+      --ok-wash:    #16291F;
+      --warn:       #D9A94E;
+      --warn-wash:  #2B2413;
+      --crit:       #E08A80;
+      --crit-wash:  #2E1917;
+
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+    }
+  }
+
+  /* The viewer's toggle must win over the OS preference in both directions. */
+  :root[data-theme="dark"] {
+    --paper:#0D1416; --surface:#131D20; --surface-2:#18262A; --rule:#26383D;
+    --ink:#E8EFEF; --ink-2:#B2C4C7; --ink-3:#7D9297;
+    --accent:#4FB8CC; --accent-2:#7FD3E2; --accent-wash:#122E36;
+    --ok:#6FBF90; --ok-wash:#16291F; --warn:#D9A94E; --warn-wash:#2B2413;
+    --crit:#E08A80; --crit-wash:#2E1917;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+  }
+  :root[data-theme="light"] {
+    --paper:#F5F8F8; --surface:#FFFFFF; --surface-2:#EDF2F2; --rule:#D7E0E1;
+    --ink:#121A1D; --ink-2:#3D4E54; --ink-3:#6C8288;
+    --accent:#0B6E7F; --accent-2:#0E8A9E; --accent-wash:#E2EFF1;
+    --ok:#2E6F4E; --ok-wash:#E4EFE8; --warn:#96650B; --warn-wash:#F5EDDC;
+    --crit:#9E3A31; --crit-wash:#F5E4E2;
+    --shadow: 0 1px 2px rgba(18,26,29,.05), 0 8px 24px -12px rgba(18,26,29,.14);
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: var(--fs-base);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 62rem;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1rem, 4vw, 2.5rem) 4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead { display: flex; flex-direction: column; gap: 1.25rem; }
+  .masthead-top {
+    display: flex; flex-wrap: wrap; gap: 1rem;
+    align-items: baseline; justify-content: space-between;
+    padding-bottom: 1.25rem; border-bottom: 2px solid var(--ink);
+  }
+  .eyebrow {
+    font-family: var(--mono); font-size: var(--fs-xs);
+    letter-spacing: .1em; text-transform: uppercase; color: var(--accent);
+  }
+  h1 {
+    font-family: var(--display); font-size: var(--fs-3xl);
+    line-height: 1.1; font-weight: 600; text-wrap: balance; margin-top: .35rem;
+  }
+  .meta {
+    font-family: var(--mono); font-size: var(--fs-sm);
+    color: var(--ink-3); text-align: right; line-height: 1.8;
+  }
+  .meta strong { color: var(--ink-2); font-weight: 600; }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-family: var(--mono); font-size: var(--fs-xs);
+    letter-spacing: .06em; text-transform: uppercase;
+    padding: .25rem .6rem; border-radius: 2px; border: 1px solid currentColor;
+  }
+  .pill-ok   { color: var(--ok);   background: var(--ok-wash); }
+  .pill-warn { color: var(--warn); background: var(--warn-wash); }
+  .pill-crit { color: var(--crit); background: var(--crit-wash); }
+
+  /* ---------- vitals ---------- */
+  .vitals {
+    display: grid; gap: 1px; background: var(--rule);
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    border: 1px solid var(--rule); box-shadow: var(--shadow);
+  }
+  .vital { background: var(--surface); padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: .3rem; }
+  .vital-label {
+    font-family: var(--mono); font-size: var(--fs-xs);
+    letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .vital-value {
+    font-family: var(--display); font-size: var(--fs-2xl);
+    font-variant-numeric: tabular-nums; line-height: 1.1; color: var(--ink);
+  }
+  .vital-note { font-size: var(--fs-xs); color: var(--ink-3); }
+  .vital-value.is-crit { color: var(--crit); }
+
+  /* ---------- sections ---------- */
+  section { display: flex; flex-direction: column; gap: 1.15rem; }
+  .sec-head { display: flex; align-items: baseline; gap: .85rem; border-bottom: 1px solid var(--rule); padding-bottom: .6rem; }
+  .sec-num {
+    font-family: var(--mono); font-size: var(--fs-sm); color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  h2 { font-family: var(--display); font-size: var(--fs-xl); font-weight: 600; letter-spacing: -.01em; }
+  h3 {
+    font-family: var(--body); font-size: var(--fs-sm); font-weight: 700;
+    letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); margin-top: .4rem;
+  }
+  p { max-width: var(--measure); color: var(--ink-2); }
+  p strong, li strong { color: var(--ink); font-weight: 650; }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  a:focus-visible, .vital:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+
+  ul { display: flex; flex-direction: column; gap: .55rem; padding-left: 0; list-style: none; max-width: var(--measure); }
+  ul li { position: relative; padding-left: 1.15rem; color: var(--ink-2); }
+  ul li::before {
+    content: ""; position: absolute; left: 0; top: .62em;
+    width: .4rem; height: 1px; background: var(--accent);
+  }
+
+  code {
+    font-family: var(--mono); font-size: .875em;
+    background: var(--surface-2); padding: .1em .35em; border-radius: 2px; color: var(--ink);
+  }
+
+  /* ---------- tables ---------- */
+  .scroll { overflow-x: auto; border: 1px solid var(--rule); background: var(--surface); box-shadow: var(--shadow); }
+  table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+  caption {
+    text-align: left; padding: .8rem 1rem; font-family: var(--mono);
+    font-size: var(--fs-xs); letter-spacing: .07em; text-transform: uppercase;
+    color: var(--ink-3); border-bottom: 1px solid var(--rule);
+  }
+  th {
+    text-align: left; font-weight: 650; color: var(--ink);
+    padding: .6rem 1rem; border-bottom: 1px solid var(--rule);
+    white-space: nowrap; font-size: var(--fs-xs);
+    letter-spacing: .05em; text-transform: uppercase;
+  }
+  td { padding: .6rem 1rem; border-bottom: 1px solid var(--rule); color: var(--ink-2); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: 0; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--ink); }
+
+  /* Severity stripe encodes risk level in form, not only in words. */
+  .risk td:first-child { border-left: 3px solid transparent; font-weight: 600; color: var(--ink); }
+  .risk-crit td:first-child { border-left-color: var(--crit); }
+  .risk-high td:first-child { border-left-color: var(--warn); }
+  .risk-med  td:first-child { border-left-color: var(--accent); }
+
+  /* ---------- callout ---------- */
+  .callout {
+    background: var(--accent-wash); border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: .5rem;
+  }
+  .callout p { max-width: none; color: var(--ink-2); }
+  .callout .vital-label { color: var(--accent); }
+
+  /* ---------- action plan ---------- */
+  .steps { display: flex; flex-direction: column; gap: 1px; background: var(--rule); border: 1px solid var(--rule); box-shadow: var(--shadow); }
+  .step { background: var(--surface); padding: 1rem 1.25rem; display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: start; }
+  .step-rank {
+    font-family: var(--mono); font-size: var(--fs-sm); color: var(--accent);
+    font-variant-numeric: tabular-nums; padding-top: .1rem;
+  }
+  .step-body { display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
+  .step-title { font-weight: 650; color: var(--ink); }
+  .step-desc { font-size: var(--fs-sm); color: var(--ink-2); }
+
+  /* ---------- footer ---------- */
+  footer {
+    border-top: 1px solid var(--rule); padding-top: 1.5rem;
+    display: flex; flex-direction: column; gap: .75rem;
+    font-size: var(--fs-sm); color: var(--ink-3);
+  }
+  .disclaimer {
+    font-family: var(--mono); font-size: var(--fs-xs);
+    letter-spacing: .04em; color: var(--ink-2);
+    border: 1px dashed var(--rule); padding: .7rem .9rem;
+  }
+
+  @media (max-width: 34rem) {
+    .masthead-top { flex-direction: column; }
+    .meta { text-align: left; }
+    .step { grid-template-columns: auto 1fr; }
+    .step > .pill { grid-column: 2; justify-self: start; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    * { margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; }
+    img, svg { display: block; max-width: 100%; }
+    button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  </style>
+
+
+  <style>
+    .theme-toggle {
+      position: fixed; top: 1rem; right: 1rem; z-index: 10;
+      font-family: var(--mono); font-size: var(--fs-xs);
+      letter-spacing: .07em; text-transform: uppercase;
+      color: var(--ink-2); background: var(--surface);
+      border: 1px solid var(--rule); padding: .4rem .7rem; border-radius: 2px;
+    }
+    .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+    .theme-toggle:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+    @media print { .theme-toggle { display: none; } }
+  </style>
+
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle" type="button" aria-live="polite">Dark</button>
+<script>
+  (function () {
+    var root = document.documentElement, btn = document.getElementById("themeToggle");
+    function current() {
+      return root.dataset.theme ||
+        (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    }
+    function label() { btn.textContent = current() === "dark" ? "Light" : "Dark"; }
+    btn.addEventListener("click", function () {
+      root.dataset.theme = current() === "dark" ? "light" : "dark";
+      label();
+    });
+    label();
+  })();
+</script>
+
+
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="masthead-top">
+      <div>
+        <div class="eyebrow">Project Status Report</div>
+        <h1>Kronos-NSE &amp; CandleCast</h1>
+      </div>
+      <div class="meta">
+        <div><strong>Reporting date</strong> &nbsp;31 July 2026</div>
+        <div><strong>Phase</strong> &nbsp;A — Model &amp; Calibration</div>
+        <div><strong>Period covered</strong> &nbsp;Milestones A1–A2</div>
+      </div>
+    </div>
+    <p>
+      Status: <span class="pill pill-ok">On track</span> &nbsp;
+      <span class="pill pill-crit">1 critical blocker</span>
+      &nbsp;— foundation milestones complete and verified; delivery of the project's
+      differentiating result has not yet begun.
+    </p>
+  </header>
+
+  <div class="vitals">
+    <div class="vital">
+      <div class="vital-label">Milestones complete</div>
+      <div class="vital-value">2 / 7</div>
+      <div class="vital-note">Phase A; A1 and A2 accepted</div>
+    </div>
+    <div class="vital">
+      <div class="vital-label">Corpus</div>
+      <div class="vital-value">113,068</div>
+      <div class="vital-note">bars · 54 tickers · 2018–2026</div>
+    </div>
+    <div class="vital">
+      <div class="vital-label">Test suite</div>
+      <div class="vital-value">33</div>
+      <div class="vital-note">passing · lint and format clean</div>
+    </div>
+    <div class="vital">
+      <div class="vital-label">Peak inference VRAM</div>
+      <div class="vital-value">134 MB</div>
+      <div class="vital-note">against a 6 GB budget</div>
+    </div>
+    <div class="vital">
+      <div class="vital-label">Commits</div>
+      <div class="vital-value is-crit">0</div>
+      <div class="vital-note">reproducibility rule unmet</div>
+    </div>
+    <div class="vital">
+      <div class="vital-label">Model metrics produced</div>
+      <div class="vital-value is-crit">0</div>
+      <div class="vital-note">gated on Milestone A3</div>
+    </div>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><h2>Executive Summary</h2></div>
+    <p>
+      The project's objective is to fine-tune and <strong>conformally calibrate</strong> the
+      open-source Kronos-small financial foundation model on Indian NSE equities, publish the
+      checkpoint and calibration study, and ship a consumer forecasting product on top of it.
+      The differentiating claim is not forecast accuracy but <strong>honest uncertainty</strong>:
+      probability cones whose stated coverage matches their empirical coverage.
+    </p>
+    <p>
+      Two of seven Phase-A milestones are complete and have passed their acceptance criteria.
+      The environment is provisioned and verified on the target hardware, and a validated
+      54-ticker, 113,068-bar NSE corpus is in place with schema enforcement shared between
+      training and serving paths. Both milestones were delivered with measured evidence rather
+      than assertion.
+    </p>
+    <p>
+      Competitive positioning is favourable and externally verifiable. Upstream Kronos has
+      substantial traction (35.1k stars, 5.9k forks) but its documentation contains
+      <strong>no treatment of uncertainty quantification, calibration, conformal prediction, or
+      coverage</strong>. An open upstream issue requesting exactly this capability
+      (reporting ~52% empirical coverage) remains unanswered by maintainers. The intended
+      contribution addresses a genuine and unfilled gap.
+    </p>
+    <p>
+      The principal management concern is <strong>conversion risk</strong>, not technical risk.
+      All work to date is foundational; no model has been trained and no forecast metric has
+      been produced. Every differentiating claim remains a promise until Milestone A3 executes.
+      Compounding this, the repository holds <strong>zero commits</strong>, so no artifact
+      currently exists outside the developer's local disk and the project's own reproducibility
+      requirement is unmet.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><h2>Technical Architecture &amp; Stack</h2></div>
+    <div class="scroll">
+      <table>
+        <caption>Verified environment and component inventory</caption>
+        <thead>
+          <tr><th>Layer</th><th>Selection</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Hardware</td><td class="num">RTX 4050 Laptop, 6 GB</td><td>Windows 11, PowerShell; single-GPU training envelope</td></tr>
+          <tr><td>Runtime</td><td class="num">Python 3.10.20 · torch 2.5.1+cu121</td><td>CUDA verified available; 89 packages resolved</td></tr>
+          <tr><td>Model</td><td class="num">Kronos-small, 24.74M params</td><td>with Kronos-Tokenizer-base; lookback 400, context 512</td></tr>
+          <tr><td>Environment mgmt</td><td class="num">uv + committed lockfile</td><td>Torch sourced from the CUDA 12.1 wheel index</td></tr>
+          <tr><td>Data acquisition</td><td class="num">yfinance (canonical)</td><td>jugaad-data retained as independent cross-check</td></tr>
+          <tr><td>Storage &amp; query</td><td class="num">Partitioned Parquet + DuckDB</td><td>Parquet is source of truth; CSV is one-way export</td></tr>
+          <tr><td>Validation</td><td class="num">pandera 0.32</td><td>Single schema enforced at train time and serve time</td></tr>
+          <tr><td>Calendar</td><td class="num">exchange_calendars — XBOM</td><td>Substituted for the specified XNSE (see risk register)</td></tr>
+          <tr><td>Planned calibration</td><td class="num">ACI (serving) + MSCP (study)</td><td>Revised from EnbPI on benchmark evidence</td></tr>
+          <tr><td>Quality gates</td><td class="num">ruff · pytest · pre-commit · GitHub Actions</td><td>CI installs without torch; GPU tests skip cleanly</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Architectural decision of record</h3>
+    <p>
+      The specification's dual-source data strategy was found to be unsound in practice and was
+      revised with approval. yfinance back-adjusts prices for corporate actions while
+      jugaad-data returns raw as-traded values; across aligned sessions the two differ by
+      exactly <span class="num">2.000000×</span> on price and <span class="num">0.500000×</span>
+      on volume around a 1:1 bonus. Because both series satisfy any schema one can write, the
+      shared-schema mechanism did <em>not</em> deliver train/serve parity as originally assumed.
+      Adopting the adjusted series everywhere secures parity by construction at negligible cost:
+      on non-action days the sources agree on returns to five decimal places.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><h2>Progress to Date</h2></div>
+
+    <h3>Milestone A1 — Environment &amp; smoke test · accepted</h3>
+    <ul>
+      <li>CUDA availability confirmed on target hardware; zero-shot forecast rendered end to end.</li>
+      <li>Peak inference VRAM measured at <strong>133.7 MB against a 6 GB budget</strong> — roughly 45× headroom, materially de-risking the A3 evaluation grid and A4 training.</li>
+      <li>CI, pre-commit, ruff and pytest established at project start rather than retrofitted; the workflow's exact command sequence was rehearsed locally, including the torch-free install path.</li>
+      <li>Reproducibility scaffolding implemented: every run emits <code>results/&lt;timestamp&gt;_&lt;git-sha&gt;/</code> with an auto-stamped disclaimer.</li>
+    </ul>
+
+    <h3>Milestone A2 — Data pipeline · accepted</h3>
+    <ul>
+      <li><strong>54 of 55 tickers ingested</strong>; 113,068 bars spanning 2018-01-01 to 2026-06-30, with a minimum of 2,090 rows per ticker against a 1,400-row acceptance bar.</li>
+      <li>Schema validation passes on <strong>100% of partitions</strong>; DuckDB confirms zero zero-volume rows and an <code>amount</code> proxy error of exactly 0.0, making the turnover-proxy constraint mechanically enforced rather than conventional.</li>
+      <li>Date-based splits established without ticker leakage: train 79,966 · validation 13,283 · test 19,819 rows, all 54 tickers present in every split.</li>
+      <li>Nine deliberate-corruption tests confirm that malformed rows fail validation, satisfying the milestone's negative-path requirement.</li>
+    </ul>
+
+    <h3>Validated findings arising from the work</h3>
+    <ul>
+      <li>The <code>close × volume</code> turnover proxy tracks real NSE turnover with a <strong>median ratio of 1.0009</strong>, empirically vindicating a specification decision that had been taken on parity grounds alone.</li>
+      <li>Corporate-action detection was recalibrated against the corpus rather than assumed. The largest genuine overnight gap across 108,880 bars is <strong>16.2%</strong>, versus −50% for an unadjusted bonus — a separation of roughly 34 points that a close-to-close rule cannot achieve, since real intraday moves reach 44.7%.</li>
+      <li>Three defects were identified in the upstream inference path by code inspection: absence of a KV cache, discarding of sampled paths before they can be consumed, and a causal-masking discrepancy between training and evaluation modes.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">04</span><h2>Current Blockers &amp; Risk Assessment</h2></div>
+
+    <div class="scroll">
+      <table>
+        <caption>Risk register — ordered by severity</caption>
+        <thead>
+          <tr><th>Risk</th><th>Severity</th><th>Analysis &amp; impact</th><th>Mitigation</th></tr>
+        </thead>
+        <tbody>
+          <tr class="risk risk-crit">
+            <td>No version control history</td>
+            <td><span class="pill pill-crit">Critical</span></td>
+            <td>The repository contains zero commits. Reproducibility requires results traceable to a commit; run directories currently record <code>nogit</code>. Two milestones of work exist only on local disk, representing both an unmitigated loss exposure and an unmet project constraint.</td>
+            <td>Initial commit before any further milestone work.</td>
+          </tr>
+          <tr class="risk risk-crit">
+            <td>Acceptance criterion may be statistically unreachable</td>
+            <td><span class="pill pill-crit">Critical</span></td>
+            <td>Milestone A5 requires empirical coverage within a ±2% band (78–82%). The test period supports roughly <strong>12 non-overlapping horizon-length blocks</strong>, and cross-sectional correlation among large-cap Indian equities is high. Estimator noise plausibly exceeds the acceptance width, meaning a correct implementation could fail on sampling variance alone.</td>
+            <td>Measure effective sample size during A3; report coverage with a block-bootstrap confidence interval and revise the criterion accordingly.</td>
+          </tr>
+          <tr class="risk risk-high">
+            <td>Validation loss measured under inconsistent attention</td>
+            <td><span class="pill pill-warn">High</span></td>
+            <td>Upstream sets causal masking from the training flag, so one attention module is non-causal in evaluation mode. Milestone A4's acceptance depends on validation loss, which would be measured under a different attention pattern than training and is therefore optimistically biased and not comparable.</td>
+            <td>Force causal masking for validation loss in the A4 overlay; expect the corrected figure to be less favourable.</td>
+          </tr>
+          <tr class="risk risk-high">
+            <td>Upstream training pipeline unusable as supplied</td>
+            <td><span class="pill pill-warn">High</span></td>
+            <td>The upstream dataset class reads a single file, sorts globally by timestamp, slides windows across the whole frame, and splits by ratio. A multi-ticker corpus would be interleaved by date with windows spliced across ticker boundaries, and ratio splits cannot express date-based splits.</td>
+            <td>Overlay dataset class scheduled for A4; export format and column ordering already accommodate it.</td>
+          </tr>
+          <tr class="risk risk-med">
+            <td>Evaluation throughput constrains study design</td>
+            <td><span class="pill pill-warn">Medium</span></td>
+            <td>Benchmarking shows the generation loop reprocesses the full context at every step. The evaluation grid costs ~49 minutes at the specified stride and ~4.6 hours at the finer stride needed to stabilise coverage estimates — doubled, since A5 repeats the grid on the fine-tuned model.</td>
+            <td>Implement KV caching with a numerical-equivalence test; measured ceiling is ~8×.</td>
+          </tr>
+          <tr class="risk risk-med">
+            <td>Planned comparator likely to fail its own criterion</td>
+            <td><span class="pill pill-warn">Medium</span></td>
+            <td>Published benchmarking across 3,000+ series finds EnbPI — the specified A5 comparator — fails to attain nominal coverage, while MSCP achieves the best interval efficiency among valid methods and ACI ranks lowest.</td>
+            <td>Substitute MSCP as the study comparator; retain ACI for the online serving path. Awaiting approval.</td>
+          </tr>
+          <tr class="risk risk-med">
+            <td>Calendar substitution and coverage gaps</td>
+            <td><span class="pill pill-warn">Medium</span></td>
+            <td>The specified <code>XNSE</code> calendar does not exist in the library; <code>XBOM</code> was substituted and verified equivalent. Two residual limitations: the packaged holiday list terminates 2026-12-31, and Muhurat sessions are omitted, so calendar-generated timestamps cannot reproduce a session present in the data.</td>
+            <td>Isolated to a single constant. Specification amendment pending; library upgrade required before year end.</td>
+          </tr>
+          <tr class="risk risk-med">
+            <td>Upstream contribution target mismatched</td>
+            <td><span class="pill pill-warn">Medium</span></td>
+            <td>The A7 target issue concerns <strong>1-minute intraday</strong> forecasting, whereas this project is scoped to daily bars with a 30-day horizon and explicitly defers intraday work. Methodology transfers; numerical results will not.</td>
+            <td>Reframe the contribution as methodology plus daily-horizon evidence.</td>
+          </tr>
+          <tr class="risk risk-med">
+            <td>Single ticker excluded by validation</td>
+            <td><span class="pill pill-warn">Low</span></td>
+            <td>One constituent carries an unadjusted demerger (−62.6% overnight gap) and is correctly rejected; a second was delisted upstream and substituted. Universe stands at 54, comfortably above the 45-ticker floor.</td>
+            <td>No action. Exclusion is recorded with its reason in the manifest.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <div class="vital-label">Assessment</div>
+      <p>
+        No risk in this register threatens project viability. Two, however, threaten the
+        <em>credibility</em> of the eventual result — the coverage-criterion feasibility issue
+        and the validation-loss inconsistency — and both are cheaper to resolve now than to
+        discover during A5. The critical version-control gap is remediable in minutes and should
+        not survive the current session.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">05</span><h2>Action Plan &amp; Next Steps</h2></div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-rank">P0</div>
+        <div class="step-body">
+          <div class="step-title">Establish version control baseline</div>
+          <div class="step-desc">Initial commit of A1–A2 deliverables. Unblocks reproducibility traceability and eliminates total-loss exposure. Estimated effort: minutes.</div>
+        </div>
+        <span class="pill pill-crit">Blocking</span>
+      </div>
+      <div class="step">
+        <div class="step-rank">P0</div>
+        <div class="step-body">
+          <div class="step-title">Ratify two specification amendments</div>
+          <div class="step-desc">Confirm the XBOM calendar substitution and the MSCP-for-EnbPI comparator change. Both are decisions reserved to the project owner; the calendar item is currently unsatisfiable as written.</div>
+        </div>
+        <span class="pill pill-warn">Decision</span>
+      </div>
+      <div class="step">
+        <div class="step-rank">P1</div>
+        <div class="step-body">
+          <div class="step-title">Milestone A3 — evaluation harness and zero-shot gate</div>
+          <div class="step-desc">Baselines, metrics, reliability and PIT diagnostics over the 648-window test grid. This is the point at which the project converts from infrastructure to evidence and should be treated as the critical path.</div>
+        </div>
+        <span class="pill pill-ok">Next</span>
+      </div>
+      <div class="step">
+        <div class="step-rank">P1</div>
+        <div class="step-body">
+          <div class="step-title">Expose sampled forecast paths</div>
+          <div class="step-desc">Prerequisite for A3, not an optimisation: CRPS, the quantile cone, and both contract probability fields require individual paths, which the upstream call currently averages away.</div>
+        </div>
+        <span class="pill pill-ok">In A3</span>
+      </div>
+      <div class="step">
+        <div class="step-rank">P2</div>
+        <div class="step-body">
+          <div class="step-title">KV cache with equivalence test</div>
+          <div class="step-desc">Measured ceiling ~8× on the grid. The equivalence test is mandatory — an incorrect cache would silently invalidate every downstream metric — and represents roughly half the work.</div>
+        </div>
+        <span class="pill pill-ok">In A3</span>
+      </div>
+      <div class="step">
+        <div class="step-rank">P2</div>
+        <div class="step-body">
+          <div class="step-title">Quantify coverage-estimator precision</div>
+          <div class="step-desc">Derive effective sample size and block-bootstrap intervals from the zero-shot run, then renegotiate the A5 acceptance band on evidence rather than assumption.</div>
+        </div>
+        <span class="pill pill-ok">In A3</span>
+      </div>
+      <div class="step">
+        <div class="step-rank">P3</div>
+        <div class="step-body">
+          <div class="step-title">Milestone A4 — fine-tuning with overlay dataset</div>
+          <div class="step-desc">Requires the custom dataset class and the causal-masking correction for validation loss. Hardware headroom is ample; memory-reduction tooling is assessed as unnecessary and is deliberately not being adopted.</div>
+        </div>
+        <span class="pill pill-warn">Queued</span>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="disclaimer">
+      Research/education tool — scenario visualization, not investment advice.
+    </div>
+    <p style="max-width:none">
+      Figures in this report are drawn from commands executed during the reporting period:
+      acceptance runs for Milestones A1 and A2, DuckDB queries over the ingested corpus,
+      a GPU benchmark of the generation loop, and direct inspection of the pinned upstream
+      source. Competitive and methodological claims are attributed to their public sources.
+      Items described as expected — interval efficiency, cache speedup in production use —
+      are projections and are labelled as such.
+    </p>
+  </footer>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets (working rule 4: env vars / Actions secrets only)
+.env
+
+# Upstream Kronos is a separate read-only project (working rule 5), reproduced at a
+# pinned SHA by phase-a/scripts/setup_upstream.ps1 rather than vendored here.
+phase-a/Kronos/
+
+# Market data + model artifacts are not committed; only manifests and results are.
+data/
+checkpoints/
+wandb/
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+
+# Eval outputs: keep results.json + figures, drop bulky intermediates.
+results/**/*.parquet
+results/**/*.npz
+
+# Local agent/harness state and working notes: not part of the published project.
+.claude/
+CLAUDE.md
+
+# OS / editor
+Thumbs.db
+.DS_Store
+.vscode/
+.idea/
