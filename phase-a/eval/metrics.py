@@ -100,9 +100,27 @@ def point_metrics(obs: np.ndarray, ens: np.ndarray) -> dict[str, float]:
 # --- proper scoring rules -------------------------------------------------------
 
 
-def crps(obs: np.ndarray, ens: np.ndarray) -> np.ndarray:
+# CRPS carries the same finite-ensemble disease as coverage, in a different form: the
+# naive estimator is inflated by roughly 1/(m-1) because the spread term is divided by
+# 2m^2 instead of 2m(m-1). Ferro's fair estimator corrects it and is unbiased at every m.
+#
+# Calibrated N(0,1), analytic expected CRPS = 1/sqrt(pi) = 0.56419:
+#
+#     m      naive     fair    inflation
+#     8     0.6347   0.5642      1.125
+#    30     0.5830   0.5642      1.033
+#   100     0.5709   0.5652      1.010
+#
+# The inflation does not cancel in a three-way comparison, and it makes CRPS values
+# reported at different ensemble sizes incomparable across papers. Fair is the default;
+# the naive estimator stays reachable so A5 can report both.
+CRPS_ESTIMATOR = "fair"
+CRPS_ANALYTIC_STANDARD_NORMAL = 1.0 / np.sqrt(np.pi)
+
+
+def crps(obs: np.ndarray, ens: np.ndarray, estimator: str = CRPS_ESTIMATOR) -> np.ndarray:
     """CRPS per (window, horizon). Lower is better; reduces to MAE for a point forecast."""
-    return np.asarray(sr.crps_ensemble(obs, ens, m_axis=-1))
+    return np.asarray(sr.crps_ensemble(obs, ens, m_axis=-1, estimator=estimator))
 
 
 def interval_score(obs: np.ndarray, ens: np.ndarray, level: float = 0.80) -> np.ndarray:
@@ -212,6 +230,9 @@ def summarize(obs: np.ndarray, ens: np.ndarray, block_ids: np.ndarray, seed: int
         "effective_blocks": effective_sample_size(block_ids),
         "point": point_metrics(obs, ens),
         "crps": float(np.mean(crps(obs, ens))),
+        "crps_estimator": CRPS_ESTIMATOR,
+        "crps_naive": float(np.mean(crps(obs, ens, estimator="qd"))),
+        "quantile_method": QUANTILE_METHOD,
         "interval_score_80": float(np.mean(interval_score(obs, ens, 0.80))),
         "pinball": pinball_loss(obs, ens, (0.1, 0.25, 0.5, 0.75, 0.9)),
         "coverage": calibration_report(obs, ens, block_ids, seed=seed),

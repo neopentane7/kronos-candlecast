@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "phase-a"))
 
 from eval.baselines import build_baselines, last_value, random_walk_drift  # noqa: E402
 from eval.metrics import (  # noqa: E402
+    CRPS_ANALYTIC_STANDARD_NORMAL,
     assert_band_feasible,
     band_bounds,
     block_bootstrap_ci,
@@ -47,6 +48,43 @@ def test_crps_of_point_forecast_equals_absolute_error():
     obs = np.array([[1.0, 2.0]])
     ens = np.full((1, 2, 50), 1.5)
     np.testing.assert_allclose(crps(obs, ens), np.array([[0.5, 0.5]]), atol=1e-9)
+
+
+def test_fair_crps_recovers_the_analytic_value_at_every_ensemble_size():
+    """A calibrated N(0,1) forecaster has expected CRPS 1/sqrt(pi) regardless of m.
+
+    Golden values are anchored on that analytic constant rather than on per-m
+    simulations, because the whole point of the fair estimator is m-independence.
+    """
+    for m in (8, 30, 100):
+        rng = np.random.default_rng(42)
+        obs = rng.standard_normal((60_000, 1))
+        ens = rng.standard_normal((60_000, 1, m))
+        fair = crps(obs, ens).mean()
+        assert abs(fair - CRPS_ANALYTIC_STANDARD_NORMAL) < 0.005, f"m={m} -> {fair}"
+
+
+def test_naive_crps_is_inflated_and_the_correction_cannot_be_dropped():
+    """Two-sided, matching the coverage pattern: correction works AND was needed."""
+    rng = np.random.default_rng(42)
+    obs = rng.standard_normal((60_000, 1))
+    ens = rng.standard_normal((60_000, 1, 30))
+
+    fair = crps(obs, ens).mean()
+    naive = crps(obs, ens, estimator="qd").mean()
+    assert 1.02 < naive / fair < 1.05, f"inflation {naive / fair} outside expected range"
+
+
+def test_crps_inflation_shrinks_with_ensemble_size():
+    """Inflation is ~1/(m-1), so it is worst exactly where ensembles are cheapest."""
+    ratios = {}
+    for m in (8, 100):
+        rng = np.random.default_rng(42)
+        obs = rng.standard_normal((40_000, 1))
+        ens = rng.standard_normal((40_000, 1, m))
+        ratios[m] = crps(obs, ens, estimator="qd").mean() / crps(obs, ens).mean()
+    assert ratios[8] > ratios[100]
+    assert ratios[8] > 1.10, ratios
 
 
 def test_crps_rewards_the_sharper_of_two_unbiased_forecasts():
