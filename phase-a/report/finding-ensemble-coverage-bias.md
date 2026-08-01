@@ -108,27 +108,39 @@ be estimable rather than merely attainable, substantially more.
 
 ---
 
-## 6. Hypothesis regarding upstream issue #254 — NOT established
+## 6. Upstream issue #254 — revised against the retrieved issue text
 
-Upstream issue #254 reports *"forecast coverage was still only around ~52%"*.
+**Superseded.** An earlier draft of this section noted that upstream's
+`auto_regressive_inference` defaults to `sample_count=5`
+(`phase-a/Kronos/model/kronos.py:389`) and observed that a measured 52% at nominal 80%
+inverts to an implied `m ≈ 4.7`. That coincidence is **dead**: the issue was retrieved and
+the reporter states their configuration.
 
-Upstream's `auto_regressive_inference` defaults to **`sample_count=5`**
-(`phase-a/Kronos/model/kronos.py:389`). Under the default quantile estimator:
+**Reporter's stated configuration** (retrieved 2026-08-01): `sample_count: 8`,
+Kronos-small + Kronos-Tokenizer-base, 1-minute NIFTY bars, lookback 240, horizons 3/5/10,
+`T=1.0`, `top_p=0.9`, six trading days (2026-03-24 → 2026-04-10), offline evaluation for
+an intraday options workflow.
+
+At **m = 8**, nominal 80%, default type-7 quantiles:
 
 ```
-m = 5, nominal 80%  →  predicted 0.533, simulated 0.564
+closed form  (0.8)(7)/(9) = 0.622
+simulated                   0.643
+hard ceiling (m-1)/(m+1)  = 0.778
 ```
 
-Inverting the closed form, a measured 52% at nominal 80% implies **m ≈ 4.7**.
+So the instrument accounts for roughly **17pp of the 28pp gap** — *if* the 52% refers to
+an 80% central interval. It does not account for all of it, and the residual is either
+genuine miscalibration or a difference in definition.
 
-That is a striking numerical coincidence, but it is **a hypothesis, not a finding.** The
-issue does not state the band definition, the ensemble size used, or the quantile
-estimator, and "coverage" there may not refer to an 80% central interval at all. It could
-equally be directional hit-rate.
+**Still unknown, and still worth asking:** the band definition and the quantile function.
+The surrounding analysis in the issue is directional (hit-rates, keep/filter decisions),
+so "coverage" may mean directional hit-rate rather than interval coverage. **If it is
+directional, none of this applies** — and ~52% on 1-minute bars is approximately the
+chance-level null, which would be a different and much less interesting finding.
 
-**What would settle it:** ask the reporter for `sample_count`, the band level, and the
-quantile function used. If `m` was small and the estimator default, a large share of the
-reported gap is instrumental rather than model miscalibration.
+Note also the ceiling: at m = 8 a 90% band is **unconstructible**, since (m−1)/(m+1) =
+0.778 < 0.90. Any 90% interval reported at that ensemble size is a clamped min/max.
 
 | measured coverage @ nominal 80% | implied m |
 |---|---|
@@ -136,6 +148,42 @@ reported gap is instrumental rather than model miscalibration.
 | 0.60 | ~7.0 |
 | 0.70 | ~15.0 |
 | 0.75 | ~31.0 |
+
+### Public-entry-point defaults are worse than the internal ones
+
+| entry point | `sample_count` | `top_p` |
+|---|---|---|
+| `auto_regressive_inference` (internal) | 5 | 0.99 |
+| `KronosPredictor.predict` / `predict_batch` (public) | **1** | 0.9 |
+
+At `sample_count=1` no interval exists at all. A user reaching for the documented API and
+asking about uncertainty gets a single path by default.
+
+---
+
+## 6a. A second mechanism: nucleus-sampling truncation
+
+Order-statistic bias is not the only route to under-coverage, and it is the only one a
+quantile estimator can fix.
+
+`top_p < 1.0` truncates the token distribution's tail at **every autoregressive step**.
+The sampled ensemble is therefore drawn from a narrower distribution than the model's own
+predictive distribution, and the resulting bands under-cover **independently of `m` and
+independently of the quantile estimator**. Over a 30-step horizon the truncations compound.
+
+Issue #254 ran at `top_p=0.9`, so both mechanisms were active simultaneously.
+
+**This extends the interpretability claim.** A coverage figure is uninterpretable unless
+it states:
+
+```
+m  ·  quantile estimator  ·  T  ·  top_p  ·  top_k
+```
+
+Reporting coverage without the sampling policy is like reporting a temperature without a
+scale. The effect is quantified on real data by the `--sweep-top-p` axis in
+`phase-a/eval/calibrate.py`; the production sampling policy is chosen from that table
+rather than inherited from a default.
 
 ---
 
@@ -176,17 +224,43 @@ the conformal improvement survives the correction.
 
 ---
 
-## 9. Open questions for further research
+## 9. Open questions
 
-1. **CRPS has an analogous bias.** `scoringrules.crps_ensemble` defaults to
-   `estimator="qd"`; alternatives include fair/PWM/NRG estimators. Does the choice matter
-   at `m = 30`? Ferro et al. (2008) is the direct reference.
-2. **Does the conformal layer absorb the artifact?** See §8.
-3. **What did issue #254 actually measure?** See §6.
-4. **Do published TSFM calibration studies state `m` and the estimator?** If not, their
-   coverage numbers carry the same ambiguity.
-5. **Interaction with the block-bootstrap interval.** The bias shifts the point estimate;
-   it should not affect interval width, but this is worth confirming empirically.
+**Q1 — CRPS analogue. ANSWERED: yes, it matters.** The naive estimator divides the spread
+term by `2m²` where the unbiased form uses `2m(m−1)`, inflating the score by roughly
+`1/(m−1)`. Against the analytic value for a calibrated N(0,1), `1/√π = 0.56419`:
+
+| m | naive | fair | inflation |
+|---|---|---|---|
+| 8 | 0.6347 | 0.5642 | 1.125 |
+| 30 | 0.5830 | 0.5642 | 1.033 |
+| 100 | 0.5709 | 0.5652 | 1.010 |
+
+Fair recovers the analytic value at every `m`; naive does not. The inflation does not
+cancel in a three-way comparison and makes CRPS incomparable across studies at different
+ensemble sizes. Ferro's fair estimator is now the default in `metrics.py`, with the naive
+form retained for the dual-estimator run.
+
+**Q2 — Does the conformal layer absorb the artifact?** Open. See §8; encoded as the A5
+dual-estimator protocol.
+
+**Q3 — What did issue #254 measure? PARTIALLY ANSWERED.** `sample_count=8` and
+`top_p=0.9` are now known (§6). The band definition and quantile function remain unknown,
+and the directional-hit-rate reading remains live.
+
+**Q4 — Do published TSFM calibration studies state `m` and the estimator?** Open, and the
+most valuable of these to answer. If they routinely do not, the interpretability claim in
+§6a generalises well beyond this one model.
+
+**Q5 — Interaction with the block bootstrap. FIRST-ORDER ANSWER: no interaction
+expected.** The bias shifts the mean of the coverage indicator, not its dependence
+structure, so interval *width* should be unaffected. Confirmed empirically as a column in
+the `--sweep-top-p` output rather than left as an assumption.
+
+**Q6 — new.** Does nucleus truncation interact with conformal calibration? A conformal
+layer fitted on truncated samples will widen bands to compensate, exactly as it would for
+the order-statistic bias — so the same dual-run logic may be needed across the sampling
+policy, not just the quantile estimator.
 
 ### Literature pointers
 
