@@ -55,6 +55,25 @@ MODEL_ID = "NeoQuasar/Kronos-small"
 # the resulting table, not by default.
 TOP_P_SWEEP = (0.9, 0.99, 1.0)
 
+# Production sampling policy, chosen from run 20260801T061559Z_7c8f164-dirty
+# (test split, 15 stratified windows, 12 blocks, m=30, T=1.0, top_k=0):
+#
+#   top_p   coverage@80   rel. width   CRPS (fair)
+#   0.90       0.4689       0.1094        56.15
+#   0.99       0.4689       0.1233        60.46
+#   1.00       0.4933       0.1284        60.63
+#
+# Truncation is real but is NOT the binding constraint. Removing it entirely widens the
+# bands 17.4% while buying only 2.4pp of coverage -- inside the noise at 12 blocks -- and
+# CRPS gets worse, not better. Closing the remaining gap from ~0.49 to 0.80 would need
+# bands roughly 1.9x wider (z from 0.66 to 1.28 under a normal), which is an order of
+# magnitude more than the sampling policy can supply. The under-coverage is therefore
+# dominated by location error, not by band width.
+#
+# So: keep top_p at the specified 0.9, which also scores best on CRPS, and leave the
+# widening to the conformal layer, which is what it is for.
+PRODUCTION_TOP_P = 0.9
+
 
 def kronos_ensemble(sampler, grid, sample_count, top_p, temperature, seed, batch_size):
     """Sampled close-price paths for the whole grid, shaped (n_windows, horizon, m)."""
@@ -151,7 +170,7 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=None, help="subsample the grid")
     ap.add_argument("--stride", type=int, default=STRIDE)
     ap.add_argument("--sample-count", type=int, default=30)
-    ap.add_argument("--top-p", type=float, default=0.9)
+    ap.add_argument("--top-p", type=float, default=PRODUCTION_TOP_P)
     ap.add_argument("--temperature", type=float, default=1.0)
     ap.add_argument("--batch-size", type=int, default=16)
     ap.add_argument("--seed", type=int, default=1234)

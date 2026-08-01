@@ -66,19 +66,42 @@ the size of each correction is visible rather than asserted.
 
 ---
 
-## 3. Extension to sampling policy
+## 3. Extension to sampling policy — RESOLVED: hold `top_p` fixed
 
-The same logic applies to `top_p`, and the mechanism is the same: a conformal layer fitted
-on truncated samples widens bands to compensate for the truncation.
+This section was written as a conditional on the A3 sweep. The sweep has run and the
+conditional resolves to **no repetition required**.
 
-The `--sweep-top-p` axis in `phase-a/eval/calibrate.py` measures the effect on the raw
-path at A3. **If that sweep shows a material coverage difference across `top_p`, the A5
-comparison must be repeated at the production `top_p` and at `top_p = 1.0`**, on the same
-dual-estimator basis. If the sweep shows the effect is negligible on daily bars at a
-30-step horizon, record that and hold `top_p` fixed.
+Run `20260801T061559Z_7c8f164-dirty`, test split, 15 stratified windows, 12 blocks,
+m = 30, T = 1.0, top_k = 0:
 
-That conditional is deliberate: the A3 sweep is a measurement, not a gate, and this is the
-decision it feeds.
+| top_p | coverage @80% | rel. band width | CRPS (fair) |
+|---|---|---|---|
+| 0.90 | 0.4689 | 0.1094 | **56.15** |
+| 0.99 | 0.4689 | 0.1233 | 60.46 |
+| 1.00 | **0.4933** | **0.1284** | 60.63 |
+
+Truncation is real and measurable — removing it widens the bands by **17.4%** — but it is
+**not the binding constraint**. That widening buys only **2.4pp** of coverage, which is
+inside the noise at 12 blocks, and CRPS gets *worse* rather than better.
+
+The arithmetic makes the point sharper. Closing the residual gap from ~0.49 to 0.80 needs
+bands roughly **1.9× wider** (under a normal, z must move from 0.66 to 1.28). The entire
+sampling-policy axis supplies 1.17×. **The under-coverage is dominated by location error,
+not band width**, which matches the per-window diagnostics: the model makes large
+directional calls that miss, rather than correct calls with tight bands.
+
+**Decision:** hold `top_p` at 0.9 (the specified value, and the best CRPS of the three),
+run the A5 comparison once rather than twice, and leave the widening to the conformal
+layer, which is exactly the job it exists to do. Recorded as `PRODUCTION_TOP_P` in
+`phase-a/eval/calibrate.py` with this table cited inline.
+
+**Caveat:** 15 windows over 12 blocks is a small basis for a negative result. The
+conclusion is "not the dominant mechanism", not "no effect". If the full-grid run shows
+materially different band behaviour, revisit.
+
+**Consequence for §2, which is unaffected:** the dual-*estimator* run still stands. The
+order-statistic bias is a property of the measurement, not of the sampling policy, and
+nothing here bears on it.
 
 ---
 
