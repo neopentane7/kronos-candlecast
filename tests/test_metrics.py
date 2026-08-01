@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "phase-a"))
 
 from eval.baselines import build_baselines, last_value, random_walk_drift  # noqa: E402
 from eval.metrics import (  # noqa: E402
+    assert_band_feasible,
     band_bounds,
     block_bootstrap_ci,
     calibration_report,
@@ -22,6 +23,7 @@ from eval.metrics import (  # noqa: E402
     crps,
     effective_sample_size,
     interval_score,
+    min_samples_for_band,
     pit_values,
     point_metrics,
     summarize,
@@ -108,6 +110,41 @@ def test_overconfident_ensemble_is_detected():
     obs = rng.normal(mu, 1.0)
     ens = rng.normal(mu[..., None], 0.3, size=(500, 3, 200))  # far too sharp
     assert coverage_indicator(obs, ens, 0.80).mean() < 0.45
+
+
+def test_band_feasibility_guard_rejects_impossible_requests():
+    """An 80% band needs m>=9 and a 90% band m>=19; below that numpy clamps in silence."""
+    with pytest.raises(ValueError, match="Cannot form"):
+        assert_band_feasible(5, 0.20)
+    with pytest.raises(ValueError, match="Cannot form"):
+        assert_band_feasible(18, 0.10)
+
+    assert_band_feasible(9, 0.20)  # exactly at the ceiling
+    assert_band_feasible(19, 0.10)
+
+
+def test_band_feasibility_message_states_the_ceiling():
+    with pytest.raises(ValueError) as exc:
+        assert_band_feasible(5, 0.20)
+    msg = str(exc.value)
+    assert "m=9" in msg  # the minimum
+    assert "0.667" in msg  # the ceiling (5-1)/(5+1) actually achievable
+
+
+def test_min_samples_matches_the_closed_form():
+    assert min_samples_for_band(0.50) == 3
+    assert min_samples_for_band(0.20) == 9
+    assert min_samples_for_band(0.10) == 19
+
+
+def test_coverage_path_refuses_an_infeasible_ensemble():
+    """The guard must fire through the public entry points, not only when called directly."""
+    obs = np.zeros((4, 2))
+    ens = np.random.default_rng(0).normal(size=(4, 2, 5))
+    with pytest.raises(ValueError, match="Cannot form"):
+        coverage_indicator(obs, ens, 0.80)
+    with pytest.raises(ValueError, match="Cannot form"):
+        interval_score(obs, ens, 0.80)
 
 
 def test_band_bounds_are_ordered_and_nested():

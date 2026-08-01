@@ -13,6 +13,8 @@ that dependence intact.
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
 import scoringrules as sr
 
@@ -47,8 +49,34 @@ def ensemble_quantile(ens: np.ndarray, q: float, method: str = QUANTILE_METHOD) 
     return np.quantile(ens, q, axis=-1, method=method)
 
 
+def min_samples_for_band(alpha: float) -> int:
+    """Smallest ensemble that can express a central ``1 - alpha`` band.
+
+    The widest distribution-free band from ``m`` samples runs min-to-max and covers
+    ``(m-1)/(m+1)``, so the band is expressible only when ``(m-1)/(m+1) >= 1 - alpha``,
+    i.e. ``m >= (2 - alpha)/alpha``.
+    """
+    return math.ceil((2.0 - alpha) / alpha)
+
+
+def assert_band_feasible(m: int, alpha: float) -> None:
+    """Fail loudly when the requested band exceeds what ``m`` samples can express.
+
+    ``np.quantile(..., method="weibull")`` clamps silently past the ceiling: it returns
+    the ensemble min and max and reports ``(m-1)/(m+1)`` coverage as though it were an
+    estimate. That number looks like a measurement of the model and is not one.
+    """
+    m_min = min_samples_for_band(alpha)
+    if m < m_min:
+        raise ValueError(
+            f"Cannot form a {1 - alpha:.0%} central band from m={m} samples; "
+            f"minimum is m={m_min} (hard ceiling (m-1)/(m+1) = {(m - 1) / (m + 1):.3f})."
+        )
+
+
 def band_bounds(ens: np.ndarray, level: float) -> tuple[np.ndarray, np.ndarray]:
     """Central prediction band for a nominal ``level`` (e.g. 0.80 -> p10/p90)."""
+    assert_band_feasible(ens.shape[-1], 1.0 - level)
     tail = (1.0 - level) / 2.0
     return ensemble_quantile(ens, tail), ensemble_quantile(ens, 1.0 - tail)
 
