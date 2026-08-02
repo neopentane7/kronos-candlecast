@@ -172,9 +172,14 @@ A CPU viability experiment on a synthetic forecaster tuned to this pathology
 **Marginal conformal fixes the average and nothing else** — the spread goes 0.269 → 0.281.
 The prediction in the previous revision of this section is confirmed.
 
-**Normalizing by an ex-ante volatility proxy does not rescue it either** (0.289). It cannot:
-the defect is trailing volatility mis-predicting future volatility, so dividing the
-nonconformity score by trailing volatility reproduces the bias rather than removing it.
+**Normalizing by the model's own anchor does not rescue it** (0.289) — the defect is
+trailing volatility mis-predicting future volatility, so dividing the nonconformity score
+by trailing volatility reproduces the bias. **But that is a fact about the normalizer, not
+the method.** With an auxiliary normalizer that anticipates the reversion, normalized
+conformal reaches a spread of 0.015, matching Mondrian and keeping the calibration set
+whole. Using a normalizer with no local information at all over-corrects and inverts the
+spread (0.301, calm now over-covering at 0.936). Details and the caveat that keeps Mondrian
+primary are in [a5-protocol.md](a5-protocol.md) §1b.
 
 **Correction to the previous revision.** This section previously asserted that stratifying
 "divides an already-thin calibration set, widening every interval". **The width half of
@@ -267,9 +272,27 @@ citing the Kronos figure. The baseline reproduction was bit-exact against the re
 ### Literature pointers
 
 - Mondrian / class-conditional conformal prediction: Vovk et al., *Algorithmic Learning in
-  a Random World*; Boström & Johansson on Mondrian regression forests.
+  a Random World*; Boström & Johansson on Mondrian regression forests. The known trade-off
+  is that partitioning "reduces the calibration set size, potentially increasing variance
+  around the target coverage level" — which matches our measured degradation and confirms
+  that the cost is set size, not interval width.
+- Normalized nonconformity scores achieve adaptivity **through auxiliary models** — the
+  qualifier that our first negative result missed.
+- Conditional vs marginal coverage: [Foygel Barber, Candès, Ramdas & Tibshirani (2021),
+  *The limits of distribution-free conditional predictive inference*](https://arxiv.org/abs/1903.04684).
+  Exact conditional coverage is impossible distribution-free, so **group-conditional** is
+  the honest description of what Mondrian and normalized conformal deliver.
+- Fair CRPS: Ferro, Richardson & Weigel (2008). Formula independently confirmed — the
+  unadjusted estimator divides the spread term by `2N²`, the adjusted by `2N(N−1)`, and the
+  adjusted form is unbiased with respect to ensemble size under exchangeability.
+- [*Ensemble-size-dependence of deep-learning post-processing methods that minimize an
+  (un)fair score*](https://arxiv.org/html/2602.15830) — the same ensemble-size pathology in
+  a deep-learning setting, directly relevant to the upstream contribution.
+- Quantile estimators: Hyndman & Fan (1996), *Sample quantiles in statistical packages*.
+  Note they recommend **type 8** for general quantile estimation, while **type 6**
+  (Weibull, 1939) is what the rank argument implies for *coverage* specifically — our
+  simulation confirms type 6 recovers nominal at m = 30 (0.8020) where type 8 variants do
+  not (median-unbiased 0.7858, normal-unbiased 0.7848). The choice is application-specific,
+  not a claim that type 6 is universally superior.
 - Volatility mean reversion and forecast-horizon scaling: standard GARCH literature; the
-  h^0.5 diffusion benchmark.
-- Ferro, Richardson & Weigel (2008) for the fair CRPS estimator used throughout.
-- Conditional vs marginal coverage: Foygel Barber et al., *The limits of distribution-free
-  conditional predictive inference*.
+  h^0.5 diffusion benchmark, validated here against our own random-walk arm at 0.4983.

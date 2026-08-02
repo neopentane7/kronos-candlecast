@@ -38,6 +38,7 @@ forced by measurement rather than preference.
 | raw | fine-tuned, uncalibrated | the shortfall to be closed |
 | **Mondrian conformal** | per-volatility-regime correction | **primary** — see §1b |
 | marginal conformal | one correction pooled | the honest ablation against Mondrian |
+| normalized conformal | auxiliary volatility normalizer | contender if the calibration set proves thin |
 | **conformalized RW-drift** | random walk + the same calibration | **the null that must be beaten** |
 
 **The fourth arm is the important addition.** Random-walk-with-drift is already
@@ -73,13 +74,32 @@ measured A3 pathology) settles which variant to use. Nominal 80%:
 **Marginal conformal fixes the average and nothing else.** The regime spread is 0.269
 before and 0.281 after — it does not shrink.
 
-**Normalized-by-lookback-volatility conformal was tested and rejected.** It had been
-proposed as a cheaper substitute for Mondrian that preserves calibration-set size. It does
-not work, and cannot: the defect *is* trailing volatility mis-predicting future volatility,
-so dividing the nonconformity score by trailing volatility reproduces the bias instead of
-removing it. A normalizer only helps when it predicts future error scale better than the
-model does — and this one is the model's own anchor. The affordability argument behind it
-was sound; the method was not.
+**Normalized conformal: the first verdict was wrong, and is corrected here.** An earlier
+revision recorded it as "tested and rejected" on the strength of the row above. That
+conclusion over-generalised from one badly chosen normalizer. The standard construction
+uses an **auxiliary** difficulty estimator; I had used the model's own anchor, which is the
+degenerate case. Re-tested with three normalizers:
+
+| normalizer | marginal | calm | volatile | spread | rel. width |
+|---|---|---|---|---|---|
+| the model's own anchor (trailing vol) | 0.789 | 0.635 | 0.928 | 0.293 | 0.075 |
+| **mean-reversion aware blend** | 0.792 | **0.794** | **0.783** | **0.015** | **0.065** |
+| long-run volatility only | 0.795 | 0.936 | 0.635 | 0.301 | 0.065 |
+| Mondrian, for comparison | 0.794 | 0.797 | 0.797 | 0.011 | 0.067 |
+
+**Failure is two-sided.** Normalizing by the model's anchor reproduces the bias;
+discarding local information entirely over-corrects and *inverts* the spread — calm now
+over-covers at 0.936 while volatile under-covers at 0.635. The normalizer must be right,
+not merely different.
+
+With a normalizer that anticipates reversion, the method **matches Mondrian on conditional
+coverage (0.015 vs 0.011), is slightly narrower, and keeps the calibration set whole** —
+which is exactly the affordability problem that makes Mondrian risky at 12 blocks.
+
+**Caveat that keeps Mondrian primary:** the blend above uses the data generator's own
+reversion exponent. It bounds what an auxiliary volatility model *could* achieve; it does
+not predict what a real EWMA or GARCH estimator *will*. Mondrian needs no auxiliary model
+and cannot be undermined by a bad one.
 
 **Mondrian is also narrower, which inverts the expected trade-off.** 0.123 against 0.142.
 Marginal conformal has to over-widen the volatile stratum in order to lift the calm one.

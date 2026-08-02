@@ -10,13 +10,42 @@ Three variants, differing only in what the nonconformity score is divided by:
                        spread is the normalizer, so the correction inherits whatever
                        conditional behaviour the model already has.
 * an array          -- score is ``|obs - centre| / normalizer``. Substitutes an ex-ante
-                       risk proxy for the model's spread. Only helps if that proxy predicts
-                       future error scale better than the model does.
-* Mondrian strata   -- a separate correction per stratum. Buys conditional coverage
+                       risk proxy for the model's spread. **Only helps if the proxy is
+                       genuinely auxiliary** -- see below.
+* Mondrian strata   -- a separate correction per stratum. Buys group-conditional coverage
                        directly at the cost of dividing the calibration set.
 
-All use the finite-sample corrected quantile ``ceil((n+1)(1-alpha))/n``, the same ``n+1``
-rank argument that governs the ensemble-size bias in ``metrics.py``.
+Choosing a normalizer, measured
+-------------------------------
+The normalizer has to be *right*, and failure is two-sided. Nominal 80% on a synthetic
+forecaster whose cone is anchored to trailing volatility where volatility mean-reverts:
+
+===================================  ========  ======  ========  ======
+normalizer                           marginal    calm  volatile  spread
+===================================  ========  ======  ========  ======
+the model's own anchor (trailing)       0.789   0.635     0.928   0.293
+mean-reversion aware blend              0.792   0.794     0.783   0.015
+long-run volatility only                0.795   0.936     0.635   0.301
+(Mondrian, for comparison)              0.794   0.797     0.797   0.011
+===================================  ========  ======  ========  ======
+
+Normalizing by the model's own anchor reproduces the bias -- it is the signal whose
+mis-prediction caused the defect. Discarding local information entirely over-corrects and
+*inverts* the spread. Only a normalizer that anticipates the reversion recovers
+group-conditional coverage, and it then matches Mondrian while keeping the calibration set
+whole.
+
+Note the blend above uses the generator's own reversion exponent, so it bounds what an
+auxiliary volatility model could achieve rather than predicting what a real one will.
+
+Exact conditional coverage is impossible distribution-free (Foygel Barber, Candès, Ramdas
+& Tibshirani, 2021), so "group-conditional" is the honest description of what either the
+Mondrian or the normalized route delivers -- coverage conditional on the strata or on the
+normalizer's level sets, not on the individual window.
+
+All variants use the finite-sample corrected quantile ``ceil((n+1)(1-alpha))/n``, the same
+``n+1`` rank argument that governs the ensemble-size bias in ``metrics.py``.
+
 """
 
 from __future__ import annotations

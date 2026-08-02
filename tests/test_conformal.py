@@ -118,17 +118,56 @@ def test_marginal_conformal_does_not_deliver_conditional_coverage():
     assert spread >= raw_spread - 0.05  # and is no better than before
 
 
-def test_normalizing_by_a_biased_proxy_does_not_fix_conditional_coverage():
-    """Normalizing by trailing vol cannot repair a defect caused by trailing vol.
+def test_normalizing_by_the_models_own_anchor_does_not_fix_conditional_coverage():
+    """A normalizer that shares the model's bias cannot remove it.
 
-    The proxy mis-predicts future error scale in exactly the stratum that under-covers,
-    so dividing by it reproduces the bias rather than removing it.
+    Trailing volatility is the very signal whose mis-prediction causes the defect, so
+    dividing the nonconformity score by it reproduces the bias. The literature's
+    normalized scores assume an *auxiliary* difficulty estimator; this is the degenerate
+    case where the estimator is the model's own anchor.
     """
     cal, test = regime_case(seed=7), regime_case(seed=8)
     scale = fit_scale(cal[0], cal[1], LEVEL, normalizer=cal[3])
     lo, hi = apply_scale(test[1], scale, LEVEL, normalizer=test[3])
     assert abs(coverage_of(test[0], lo, hi) - LEVEL) < 0.05
     assert np.ptp(regime_coverage(test[0], lo, hi, test[2])) > 0.20
+
+
+def test_an_auxiliary_normalizer_does_fix_conditional_coverage():
+    """The method is sound; only the choice of normalizer was not.
+
+    A normalizer that anticipates mean reversion recovers group-conditional coverage
+    without stratifying, so the calibration set stays whole. This uses the generator's own
+    reversion exponent, so it bounds what an auxiliary volatility model could achieve
+    rather than predicting what ours will.
+    """
+    cal, test = regime_case(seed=7), regime_case(seed=8)
+    beta, v_bar = 0.5, 0.012
+    aux_c = cal[3] ** beta * v_bar ** (1 - beta)
+    aux_t = test[3] ** beta * v_bar ** (1 - beta)
+
+    scale = fit_scale(cal[0], cal[1], LEVEL, normalizer=aux_c)
+    lo, hi = apply_scale(test[1], scale, LEVEL, normalizer=aux_t)
+    assert abs(coverage_of(test[0], lo, hi) - LEVEL) < 0.05
+    assert np.ptp(regime_coverage(test[0], lo, hi, test[2])) < 0.06
+
+
+def test_an_over_corrected_normalizer_inverts_the_regime_spread():
+    """Failure is two-sided: discarding local information is as bad as trusting it.
+
+    Normalizing by a constant long-run volatility makes the calm stratum over-cover and
+    the volatile one under-cover -- the spread flips sign rather than closing. The
+    normalizer has to be right, not merely different from the model's anchor.
+    """
+    cal, test = regime_case(seed=7), regime_case(seed=8)
+    flat_c = np.full_like(cal[3], 0.012)
+    flat_t = np.full_like(test[3], 0.012)
+
+    scale = fit_scale(cal[0], cal[1], LEVEL, normalizer=flat_c)
+    lo, hi = apply_scale(test[1], scale, LEVEL, normalizer=flat_t)
+    per_regime = regime_coverage(test[0], lo, hi, test[2])
+    assert np.ptp(per_regime) > 0.20
+    assert per_regime[0] > per_regime[2], "expected calm to over-cover once local info is dropped"
 
 
 def test_mondrian_delivers_conditional_coverage():
