@@ -100,11 +100,17 @@ def kronos_ensemble(sampler, grid, sample_count, top_p, temperature, seed, batch
     return np.concatenate(chunks, axis=0).transpose(0, 2, 1)  # -> (n, horizon, m)
 
 
-def sweep_top_p(sampler, grid, args, run_dir) -> list[dict]:
-    """Quantify the nucleus-truncation mechanism on a stratified subsample."""
+def sweep_top_p(sampler, grid, args, run_dir):
+    """Quantify the nucleus-truncation mechanism on a stratified subsample.
+
+    Returns ``(rows, ensembles, subgrid)`` so the arms can be compared with a *paired*
+    bootstrap later -- they share windows, so unpaired intervals would overstate the
+    uncertainty of their differences.
+    """
     sub = grid.subsample(args.sweep_size, seed=args.seed)
     print(f"\n=== sampling-policy sweep on {len(sub)} stratified windows ===")
     rows = []
+    sweep_ens: dict[str, np.ndarray] = {}
     for top_p in TOP_P_SWEEP:
         t0 = time.perf_counter()
         ens = kronos_ensemble(
@@ -116,6 +122,7 @@ def sweep_top_p(sampler, grid, args, run_dir) -> list[dict]:
             args.seed,
             args.batch_size,
         )
+        sweep_ens[f"top_p_{top_p}"] = ens
         s = summarize(sub.y_close, ens, sub.block_ids, seed=args.seed)
         lower = np.quantile(ens, 0.10, axis=-1, method=QUANTILE_METHOD)
         upper = np.quantile(ens, 0.90, axis=-1, method=QUANTILE_METHOD)
@@ -138,7 +145,34 @@ def sweep_top_p(sampler, grid, args, run_dir) -> list[dict]:
             f"  top_p={top_p:<5} coverage@80={cov['empirical']:.4f} "
             f"width={rows[-1]['mean_relative_width']:.4f} crps={s['crps']:.4f}"
         )
-    return rows
+    return rows, sweep_ens, sub
+
+
+def save_artifacts(run_dir: Path, grid, ensembles: dict[str, np.ndarray], extra=None) -> Path:
+    """Persist the ensembles and grid alignment so the run can be re-analysed offline.
+
+    Without this, every follow-up question about a run -- re-centering, regime controls,
+    paired bootstraps, dispersion ratios -- needs the GPU again. Metrics alone are not a
+    reproducible artifact; the forecasts are. Gitignored (``results/**/*.npz``) because
+    they are derived data, and the run directory's sha ties them to the code that made
+    them.
+    """
+    path = run_dir / "ensembles.npz"
+    payload = {
+        "y_close": grid.y_close,
+        "history_close": grid.history_close,
+        "atr_pct": grid.atr_pct,
+        "atr_tercile": grid.atr_tercile(),
+        "block_ids": grid.block_ids,
+        "tickers": np.array(grid.tickers),
+        "start_dates": np.array([str(d.date()) for d in grid.start_dates]),
+    }
+    for name, ens in ensembles.items():
+        payload[f"ens__{name}"] = ens.astype(np.float32)
+    for name, arr in (extra or {}).items():
+        payload[name] = arr
+    np.savez_compressed(path, **payload)
+    return path
 
 
 def regime_slices(grid, ens, seed) -> dict:
@@ -239,9 +273,11 @@ def main() -> int:
     }
 
     print("\n=== baselines ===")
+    ensembles: dict[str, np.ndarray] = {}
     for name, ens in build_baselines(
         grid.history_close, grid.y_close.shape[1], args.sample_count, args.seed
     ).items():
+        ensembles[name] = ens
         payload["models"][name] = summarize(grid.y_close, ens, grid.block_ids, seed=args.seed)
         m = payload["models"][name]
         print(f"  {name:<20} crps={m['crps']:.4f} cov@80={m['coverage']['80']['empirical']:.4f}")
@@ -274,6 +310,7 @@ def main() -> int:
         )
         wall = time.perf_counter() - t0
 
+        ensembles["kronos_zeroshot"] = ens
         payload["models"]["kronos_zeroshot"] = summarize(
             grid.y_close, ens, grid.block_ids, seed=args.seed
         )
@@ -294,8 +331,23 @@ def main() -> int:
         )
 
         if args.sweep_top_p:
-            payload["sampling_policy_sweep"] = sweep_top_p(sampler, grid, args, run_dir)
+            rows, sweep_ens, sub = sweep_top_p(sampler, grid, args, run_dir)
+            payload["sampling_policy_sweep"] = rows
+            # The sweep runs on a subsample, so its alignment arrays differ from the
+            # main grid's and must travel with it.
+            save_artifacts(
+                run_dir,
+                sub,
+                sweep_ens,
+                extra={"sweep_subsample_of": np.array(len(grid))},
+            )
+            (run_dir / "ensembles.npz").rename(run_dir / "ensembles_sweep.npz")
 
+    artifact_path = save_artifacts(run_dir, grid, ensembles)
+    payload["artifacts"] = {
+        "ensembles": artifact_path.name,
+        "note": "forecast paths and grid alignment, for offline re-analysis without a GPU",
+    }
     results_path = write_results(run_dir, payload)
 
     print("\n--- summary ---")
