@@ -28,10 +28,75 @@ improvement would be inflated by an amount nobody could see from the figure.
 
 ---
 
+## 1a. Arms — revised on evidence
+
+The comparison has **four** arms, not three. Two changes from the original plan, both
+forced by measurement rather than preference.
+
+| arm | what it is | why it is here |
+|---|---|---|
+| raw | fine-tuned, uncalibrated | the shortfall to be closed |
+| **Mondrian conformal** | per-volatility-regime correction | **primary** — see §1b |
+| marginal conformal | one correction pooled | the honest ablation against Mondrian |
+| **conformalized RW-drift** | random walk + the same calibration | **the null that must be beaten** |
+
+**The fourth arm is the important addition.** Random-walk-with-drift is already
+near-calibrated out of the box (0.881 at nominal 80%) and scores **41% better CRPS than
+zero-shot Kronos** (39.93 against 67.57). A calibrated cone that a random walk also
+produces is not a product. Conformalizing the baseline too is the only way to know whether
+the model is contributing anything.
+
+### Pre-registered pass bar
+
+> Fine-tuned + calibrated Kronos must beat conformalized RW-drift on **fair CRPS and
+> interval score**, not merely on coverage.
+
+Coverage alone cannot distinguish them, because conformal calibration will give *both*
+arms nominal coverage by construction — that is what it does. Only sharpness at equal
+coverage separates a model from a random walk. **This bar is fixed before the first A4
+training run**, so it cannot be relaxed after seeing results.
+
+---
+
+## 1b. Method selection — Mondrian, on measured evidence
+
+A CPU viability experiment (`tests/test_conformal.py`, synthetic forecaster tuned to the
+measured A3 pathology) settles which variant to use. Nominal 80%:
+
+| arm | marginal | calm | mid | volatile | spread | rel. width |
+|---|---|---|---|---|---|---|
+| raw | 0.459 | 0.333 | 0.443 | 0.602 | 0.269 | 0.064 |
+| marginal conformal | 0.794 | 0.648 | 0.805 | 0.929 | **0.281** | 0.142 |
+| normalized by lookback vol | 0.793 | 0.643 | 0.804 | 0.932 | **0.289** | 0.138 |
+| **Mondrian** | 0.796 | **0.799** | **0.790** | **0.798** | **0.009** | **0.123** |
+
+**Marginal conformal fixes the average and nothing else.** The regime spread is 0.269
+before and 0.281 after — it does not shrink.
+
+**Normalized-by-lookback-volatility conformal was tested and rejected.** It had been
+proposed as a cheaper substitute for Mondrian that preserves calibration-set size. It does
+not work, and cannot: the defect *is* trailing volatility mis-predicting future volatility,
+so dividing the nonconformity score by trailing volatility reproduces the bias instead of
+removing it. A normalizer only helps when it predicts future error scale better than the
+model does — and this one is the model's own anchor. The affordability argument behind it
+was sound; the method was not.
+
+**Mondrian is also narrower, which inverts the expected trade-off.** 0.123 against 0.142.
+Marginal conformal has to over-widen the volatile stratum in order to lift the calm one.
+So the cost of stratification is **calibration-set size, not interval width** — the
+opposite of what this protocol previously assumed.
+
+Degradation as the calibration set thins (windows per stratum → marginal coverage /
+spread): 400 → 0.798/0.010 · 100 → 0.802/0.006 · 30 → 0.810/0.036 · 12 → 0.861/0.024 ·
+6 → 0.840/0.048. Usable to about **30 windows per stratum** on independent data; ours are
+correlated within a forecast date, so the real threshold is higher and must be sized from
+the full grid before Mondrian is trusted.
+
+---
+
 ## 2. Protocol
 
-Run the full three-way comparison — **raw / ACI / MSCP** — under **both** quantile
-estimators:
+Run every arm in §1a under **both** quantile estimators:
 
 | run | quantile estimator | purpose |
 |---|---|---|
@@ -63,6 +128,14 @@ m · quantile estimator · T · top_p · top_k
 
 Both fair and naive CRPS are reported side by side, as `summarize()` already emits, so
 the size of each correction is visible rather than asserted.
+
+**Conditional coverage is the headline, not marginal coverage.** The viability experiment
+shows marginal coverage can be made to look correct while every stratum is wrong — 0.794
+overall with 0.648 / 0.805 / 0.929 underneath. Reporting the marginal number alone would
+be technically true and substantively misleading, which is the exact failure this project
+exists to avoid. Every reliability diagram is therefore accompanied by a per-regime
+coverage table, and a run that hits nominal marginally while leaving a regime spread above
+0.10 is reported as **not calibrated**.
 
 ---
 

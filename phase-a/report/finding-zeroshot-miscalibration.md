@@ -66,6 +66,23 @@ correctly-specified Gaussian forecaster should look.
 is precisely what split conformal and MSCP produce. The failure mode is the one conformal
 calibration is designed for.
 
+### The test is one-sided — read it as rejection, not confirmation
+
+Constancy **rejects** bias-dominated error but does **not confirm** pure scale error. A
+bias-plus-scale mixture also reads flat. Simulated, 400k observations each:
+
+| forecaster | ratios @ 50/80/90 | spread | verdict against our 0.0186 |
+|---|---|---|---|
+| pure scale, σ = 0.44 | 0.440 / 0.440 / 0.440 | 0.000 | consistent |
+| random-sign bias 0.75 + scale 0.75 | 0.570 / 0.578 / 0.584 | 0.014 | **also consistent — not excluded** |
+| pure bias 1.1, correct scale | 0.564 / 0.609 / 0.636 | 0.072 | excluded |
+
+The discriminating signature is **monotonicity**: location bias makes the ratio climb with
+nominal level; pure scale is flat. Our measured sequence (0.4529, 0.4343, 0.4403) is
+**non-monotone**, i.e. noise around a constant — encouraging, but underpowered at 12
+blocks. `z_ratio_table` returns a `monotone_increasing` flag; check it on the full grid
+before treating the scale reading as settled.
+
 ---
 
 ## 4. Sampling-policy sweep
@@ -125,20 +142,49 @@ sized for the calm past — under-covers badly. A volatile lookback produces a w
 a future that tends to settle, so coverage looks better. **The model does not anticipate
 regime change; it extrapolates the recent past.**
 
-### Why this matters for A5
+### Control: how much of this is Kronos, and how much is any lookback-based forecaster?
 
-A **marginal** conformal correction sized to hit 80% on average would leave conditional
-coverage badly wrong — roughly 0.6 in calm regimes and 0.9 in volatile ones, preserving
-most of the 29-point spread. The cone would be honest on average and dishonest exactly
-when a user is most exposed.
+The mechanism is not Kronos-specific in kind — it punishes **any** forecaster whose
+dispersion is estimated from the lookback, including our random-walk baseline. The same
+tercile cuts, same windows:
 
-This is the empirical case for **regime-conditional (Mondrian) conformal calibration**,
-stratifying the calibration set by an observable volatility proxy. It was previously a
-speculative suggestion; it is now motivated by measurement.
+| forecaster | calm | mid | volatile | calm − volatile |
+|---|---|---|---|---|
+| random_walk_drift | 0.853 | 0.887 | 0.902 | **−0.049** |
+| kronos_zeroshot | 0.260 | 0.456 | 0.551 | **−0.291** |
 
-**The counter-pressure is real:** stratifying three ways divides an already-thin
-calibration set, widening every interval. With 12 effective blocks this is not currently
-affordable. It becomes affordable only with the finer stride the KV cache unlocks.
+The random walk shows the **same sign** — so the general mechanism is real — at **16.8%**
+of the magnitude. The effect is therefore general in kind and **Kronos-specific in
+degree**, and the excess is what fine-tuning and calibration have to address.
+
+### Why this matters for A5 — tested, not assumed
+
+A CPU viability experiment on a synthetic forecaster tuned to this pathology
+(`tests/test_conformal.py`) settles the method question. Nominal 80%:
+
+| arm | marginal | calm | mid | volatile | spread | rel. width |
+|---|---|---|---|---|---|---|
+| raw | 0.459 | 0.333 | 0.443 | 0.602 | 0.269 | 0.064 |
+| marginal conformal | 0.794 | 0.648 | 0.805 | 0.929 | 0.281 | 0.142 |
+| normalized by lookback vol | 0.793 | 0.643 | 0.804 | 0.932 | 0.289 | 0.138 |
+| **Mondrian (per regime)** | 0.796 | 0.799 | 0.790 | 0.798 | **0.009** | **0.123** |
+
+**Marginal conformal fixes the average and nothing else** — the spread goes 0.269 → 0.281.
+The prediction in the previous revision of this section is confirmed.
+
+**Normalizing by an ex-ante volatility proxy does not rescue it either** (0.289). It cannot:
+the defect is trailing volatility mis-predicting future volatility, so dividing the
+nonconformity score by trailing volatility reproduces the bias rather than removing it.
+
+**Correction to the previous revision.** This section previously asserted that stratifying
+"divides an already-thin calibration set, widening every interval". **The width half of
+that is wrong.** Mondrian is *narrower* — 0.123 against 0.142 — because marginal conformal
+must over-widen the volatile stratum in order to lift the calm one. The real cost of
+stratification is **calibration-set size only**. Measured degradation, windows per stratum
+→ marginal / spread: 400 → 0.798/0.010 · 100 → 0.802/0.006 · 30 → 0.810/0.036 ·
+12 → 0.861/0.024 · 6 → 0.840/0.048. Usable to roughly 30 per stratum on independent
+windows; ours are correlated within a date, so the real threshold is higher and must be
+sized from the full grid.
 
 ---
 
@@ -156,6 +202,18 @@ that indicates error accumulating faster than diffusion alone, i.e. **systematic
 error compounding across steps** rather than variance simply widening. This corroborates
 the per-window diagnostics, where the model made large directional calls that missed
 (GODREJCP predicted +4.3% against −7.8% actual; ULTRACEMCO predicted −7.6% against +0.6%).
+
+**Validated against the baseline.** The theoretical 0.5 is not assumed — it is measured on
+our own random-walk arm, through the same code path, on the same windows:
+
+```
+random_walk_drift exponent = 0.4983      band [0.45, 0.55]      PASS
+kronos_zeroshot   exponent = 0.639       excess = +0.141
+```
+
+The harness therefore recovers the known answer where one exists, which is what licenses
+citing the Kronos figure. The baseline reproduction was bit-exact against the recorded run
+(CRPS 39.9271, coverage 0.8807), confirming the grid rebuild is deterministic.
 
 ---
 
@@ -186,18 +244,25 @@ the per-window diagnostics, where the model made large directional calls that mi
 
 ## 9. Open questions
 
-1. **Does the constant z-ratio hold on the full grid and after fine-tuning?** If it does,
-   it is a strong argument that a scalar conformal correction suffices — a cleaner claim
-   than "conformal helps".
-2. **Does the regime spread survive conformalization?** The A5 three-way comparison should
-   report conditional coverage per regime, not just marginal.
-3. **Is the h^0.639 exponent stable across regimes and tickers?** A drift-error signature
-   that varies by regime would argue for horizon-and-regime-conditional calibration.
-4. **What does the random walk's exponent look like?** It should be ~0.5 by construction;
-   measuring it validates the harness and calibrates the comparison. Not yet computed.
-5. **Is the under-dispersion partly an artifact of window normalisation?** Kronos
-   standardises each window by its own mean and sd, which may systematically compress
-   predicted variance relative to realised.
+1. **Does the constant z-ratio hold on the full grid and after fine-tuning?** Open, and now
+   with a sharper form: check the `monotone_increasing` flag, since flatness is only
+   one-sided evidence (§3).
+2. **Does the regime spread survive conformalization? ANSWERED in simulation.** Marginal
+   conformal leaves it (0.269 → 0.281); Mondrian collapses it (→ 0.009). Still to confirm
+   on real data.
+3. **Is the h^0.639 exponent stable across regimes and tickers?** Open. A drift signature
+   that varies by regime would argue for horizon-*and*-regime-conditional calibration.
+4. **What does the random walk's exponent look like? ANSWERED: 0.4983**, inside the
+   [0.45, 0.55] band. The harness recovers the known answer, so the Kronos figure stands.
+5. **Is the under-dispersion partly an artifact of window normalisation?** Open, and the
+   most consequential of the remaining questions. If dispersion is already compressed at
+   h = 1, part of the 2.26× is a tokenizer/normalisation ceiling that fine-tuning the
+   transformer cannot lift — which would materially change §7's expectations. Requires the
+   saved forecast paths (now persisted; needs a regeneration run).
+6. **Does the top_p = 1.0 CRPS worsening indicate junk mass in the untruncated tail?**
+   Widening an under-dispersed forecast toward truth should improve CRPS. That it got worse
+   points at the quantizer's edge bins and the upstream `clip=5` input clipping distorting
+   predictive support. Related to Q5 and testable the same way.
 
 ### Literature pointers
 
