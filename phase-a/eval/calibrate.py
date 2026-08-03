@@ -100,7 +100,7 @@ def kronos_ensemble(sampler, grid, sample_count, top_p, temperature, seed, batch
     return np.concatenate(chunks, axis=0).transpose(0, 2, 1)  # -> (n, horizon, m)
 
 
-def sweep_top_p(sampler, grid, args, run_dir):
+def sweep_top_p(sampler, grid, args, run_dir, payload=None):
     """Quantify the nucleus-truncation mechanism on a stratified subsample.
 
     Returns ``(rows, ensembles, subgrid)`` so the arms can be compared with a *paired*
@@ -145,10 +145,28 @@ def sweep_top_p(sampler, grid, args, run_dir):
             f"  top_p={top_p:<5} coverage@80={cov['empirical']:.4f} "
             f"width={rows[-1]['mean_relative_width']:.4f} crps={s['crps']:.4f}"
         )
+        # Each arm is ~9 minutes; checkpoint so a loss costs one arm, not all three.
+        if payload is not None:
+            payload["sampling_policy_sweep"] = rows
+            payload["sweep_subsample_of"] = len(grid)
+            checkpoint(
+                run_dir,
+                sub,
+                sweep_ens,
+                payload,
+                f"sweep_top_p_{top_p}",
+                filename="ensembles_sweep.npz",
+            )
     return rows, sweep_ens, sub
 
 
-def save_artifacts(run_dir: Path, grid, ensembles: dict[str, np.ndarray], extra=None) -> Path:
+def save_artifacts(
+    run_dir: Path,
+    grid,
+    ensembles: dict[str, np.ndarray],
+    extra=None,
+    filename: str = "ensembles.npz",
+) -> Path:
     """Persist the ensembles and grid alignment so the run can be re-analysed offline.
 
     Without this, every follow-up question about a run -- re-centering, regime controls,
@@ -157,7 +175,7 @@ def save_artifacts(run_dir: Path, grid, ensembles: dict[str, np.ndarray], extra=
     they are derived data, and the run directory's sha ties them to the code that made
     them.
     """
-    path = run_dir / "ensembles.npz"
+    path = run_dir / filename
     payload = {
         "y_close": grid.y_close,
         "history_close": grid.history_close,
@@ -173,6 +191,20 @@ def save_artifacts(run_dir: Path, grid, ensembles: dict[str, np.ndarray], extra=
         payload[name] = arr
     np.savez_compressed(path, **payload)
     return path
+
+
+def checkpoint(run_dir: Path, grid, ensembles, payload: dict, label: str, filename="ensembles.npz"):
+    """Flush everything computed so far to disk.
+
+    Long GPU runs on this hardware have twice died mid-flight and lost work that was
+    already finished and sitting in memory — a completed 45-window grid in one case. The
+    harness previously wrote nothing until the very end, so any failure cost the whole
+    run. Checkpointing after each stage turns that into the loss of one stage.
+    """
+    save_artifacts(run_dir, grid, ensembles, filename=filename)
+    payload["last_checkpoint"] = label
+    write_results(run_dir, payload)
+    print(f"    [checkpoint: {label}]", flush=True)
 
 
 def regime_slices(grid, ens, seed) -> dict:
@@ -282,6 +314,7 @@ def main() -> int:
         payload["models"][name] = summarize(grid.y_close, ens, grid.block_ids, seed=args.seed)
         m = payload["models"][name]
         print(f"  {name:<20} crps={m['crps']:.4f} cov@80={m['coverage']['80']['empirical']:.4f}")
+    checkpoint(run_dir, grid, ensembles, payload, "baselines")
 
     if not args.skip_model:
         import torch
@@ -330,19 +363,13 @@ def main() -> int:
             f"  kronos_zeroshot      crps={m['crps']:.4f} "
             f"cov@80={m['coverage']['80']['empirical']:.4f} ({wall:.0f}s)"
         )
+        # The expensive stage is done. Make it survivable before starting the sweep --
+        # this is exactly the work a mid-run GPU loss discarded twice.
+        checkpoint(run_dir, grid, ensembles, payload, "kronos_zeroshot")
 
         if args.sweep_top_p:
-            rows, sweep_ens, sub = sweep_top_p(sampler, grid, args, run_dir)
+            rows, sweep_ens, sub = sweep_top_p(sampler, grid, args, run_dir, payload)
             payload["sampling_policy_sweep"] = rows
-            # The sweep runs on a subsample, so its alignment arrays differ from the
-            # main grid's and must travel with it.
-            save_artifacts(
-                run_dir,
-                sub,
-                sweep_ens,
-                extra={"sweep_subsample_of": np.array(len(grid))},
-            )
-            (run_dir / "ensembles.npz").rename(run_dir / "ensembles_sweep.npz")
 
     artifact_path = save_artifacts(run_dir, grid, ensembles)
     payload["artifacts"] = {
