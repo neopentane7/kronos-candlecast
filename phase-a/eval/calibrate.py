@@ -211,6 +211,7 @@ def main() -> int:
     ap.add_argument("--sweep-top-p", action="store_true")
     ap.add_argument("--sweep-size", type=int, default=60)
     ap.add_argument("--skip-model", action="store_true", help="baselines only")
+    ap.add_argument("--no-figures", action="store_true", help="skip figure rendering")
     args = ap.parse_args()
 
     # Fail before spending GPU time if the requested bands are unconstructible.
@@ -348,6 +349,26 @@ def main() -> int:
         "ensembles": artifact_path.name,
         "note": "forecast paths and grid alignment, for offline re-analysis without a GPU",
     }
+
+    if not args.no_figures:
+        from eval.figures import write_all
+
+        subtitle = (
+            f"{args.split} split · {len(grid)} windows · {len(set(grid.start_dates))} blocks · "
+            f"m={args.sample_count} · {QUANTILE_METHOD} quantiles"
+        )
+        figures = write_all(
+            grid.y_close,
+            ensembles,
+            grid.block_ids,
+            run_dir,
+            terciles=grid.atr_tercile(),
+            seed=args.seed,
+            subtitle=subtitle,
+        )
+        payload["artifacts"]["figures"] = [p.name for p in figures]
+        print(f"\nfigures: {len(figures)} written to {run_dir}")
+
     results_path = write_results(run_dir, payload)
 
     print("\n--- summary ---")
