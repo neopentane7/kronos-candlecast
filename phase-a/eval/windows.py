@@ -9,6 +9,15 @@ on target-period data.
 Windows are keyed by forecast start date, which is also the block identifier for the
 bootstrap: every ticker forecasting from the same date shares that date's market
 conditions, so they succeed or fail together and must be resampled together.
+
+Memory
+------
+Windows are stored as **integer offsets into a compact per-ticker array**, and the pandas
+objects the sampler needs are built one batch at a time. An earlier version materialised
+every window eagerly -- 708 DataFrames plus 1,416 Series held for the run's lifetime --
+which was fine at 45 windows and drove the machine into paging at 708: 16 GB resident,
+1.9 GB free, the GPU idle at 0% while one core thrashed. The underlying numbers are only
+about 3 MB; the rest was pandas per-object overhead.
 """
 
 from __future__ import annotations
@@ -26,23 +35,52 @@ LOOKBACK = 400
 HORIZON = 30
 STRIDE = 30
 
+FEATURE_COLUMNS = CANONICAL_COLUMNS[1:]  # open, high, low, close, volume, amount
+
 
 @dataclass
 class EvalGrid:
-    """One evaluation grid: aligned windows plus everything needed to score them."""
+    """Windows as offsets into per-ticker arrays, plus everything needed to score them."""
 
-    tickers: list[str]
+    features: dict[str, np.ndarray]  # ticker -> (n_rows, 6) float64
+    timestamps: dict[str, pd.DatetimeIndex]  # ticker -> (n_rows,)
+    tickers: list[str]  # per window
+    offsets: list[int]  # per window: row index of the first target bar
     start_dates: list[pd.Timestamp]
-    x_frames: list[pd.DataFrame]
-    x_timestamps: list[pd.Series]
-    y_timestamps: list[pd.Series]
-    y_close: np.ndarray  # (n_windows, horizon) realized closes
-    history_close: np.ndarray  # (n_windows, lookback) for the baselines
-    atr_pct: np.ndarray  # (n_windows,) volatility of the lookback, for regime slices
+    y_close: np.ndarray  # (n_windows, horizon)
+    history_close: np.ndarray  # (n_windows, lookback)
+    atr_pct: np.ndarray  # (n_windows,)
+    lookback: int = LOOKBACK
+    horizon: int = HORIZON
     meta: dict = field(default_factory=dict)
 
     def __len__(self) -> int:
         return len(self.tickers)
+
+    # -- lazy window construction --------------------------------------------------
+
+    def batch(self, start: int, stop: int) -> tuple[list, list, list]:
+        """Build the pandas objects for windows ``[start, stop)`` on demand.
+
+        Returns ``(df_list, x_timestamp_list, y_timestamp_list)`` in the shape the sampler
+        expects. Nothing is cached: the caller holds one batch at a time.
+        """
+        dfs, x_ts, y_ts = [], [], []
+        for i in range(start, min(stop, len(self))):
+            t, off = self.tickers[i], self.offsets[i]
+            feats = self.features[t]
+            stamps = self.timestamps[t]
+            lo = off - self.lookback
+            dfs.append(pd.DataFrame(feats[lo:off], columns=FEATURE_COLUMNS))
+            x_ts.append(pd.Series(stamps[lo:off], name="timestamps").reset_index(drop=True))
+            y_ts.append(
+                pd.Series(stamps[off : off + self.horizon], name="timestamps").reset_index(
+                    drop=True
+                )
+            )
+        return dfs, x_ts, y_ts
+
+    # -- alignment -----------------------------------------------------------------
 
     @property
     def block_ids(self) -> np.ndarray:
@@ -60,11 +98,7 @@ class EvalGrid:
         return np.digitize(self.atr_pct, edges)
 
     def subsample(self, n: int, seed: int = 0) -> EvalGrid:
-        """A smaller grid, stratified by volatility regime and spread over time.
-
-        Used for iteration and for the sampling-policy sweep, where the question is a
-        relative comparison rather than a headline number.
-        """
+        """A smaller grid, stratified by volatility regime and spread over time."""
         if n >= len(self):
             return self
         rng = np.random.default_rng(seed)
@@ -75,40 +109,37 @@ class EvalGrid:
             take = min(len(idx), n // 3 + (1 if t < n % 3 else 0))
             picks.extend(rng.choice(idx, size=take, replace=False).tolist())
         picks = sorted(picks)
+        kept = {self.tickers[i] for i in picks}
         return EvalGrid(
+            # Share the backing arrays rather than copying; they are read-only here.
+            features={k: v for k, v in self.features.items() if k in kept},
+            timestamps={k: v for k, v in self.timestamps.items() if k in kept},
             tickers=[self.tickers[i] for i in picks],
+            offsets=[self.offsets[i] for i in picks],
             start_dates=[self.start_dates[i] for i in picks],
-            x_frames=[self.x_frames[i] for i in picks],
-            x_timestamps=[self.x_timestamps[i] for i in picks],
-            y_timestamps=[self.y_timestamps[i] for i in picks],
             y_close=self.y_close[picks],
             history_close=self.history_close[picks],
             atr_pct=self.atr_pct[picks],
+            lookback=self.lookback,
+            horizon=self.horizon,
             meta={
                 **self.meta,
                 "subsampled_from": len(self),
                 "subsample_seed": seed,
-                # Recount rather than inheriting: the parent's totals describe a grid
-                # this one is no longer.
                 "n_windows": len(picks),
-                "n_tickers": len({self.tickers[i] for i in picks}),
+                "n_tickers": len(kept),
                 "n_distinct_start_dates": len({self.start_dates[i] for i in picks}),
             },
         )
 
 
-def average_true_range_pct(df: pd.DataFrame) -> float:
-    """ATR over the frame as a fraction of mean close, so it compares across tickers."""
-    prev_close = df["close"].shift(1)
-    tr = pd.concat(
-        [
-            df["high"] - df["low"],
-            (df["high"] - prev_close).abs(),
-            (df["low"] - prev_close).abs(),
-        ],
-        axis=1,
-    ).max(axis=1)
-    return float(tr.mean() / df["close"].mean())
+def average_true_range_pct(high, low, close) -> float:
+    """ATR over the window as a fraction of mean close, so it compares across tickers."""
+    prev_close = np.concatenate([[np.nan], close[:-1]])
+    tr = np.nanmax(
+        np.stack([high - low, np.abs(high - prev_close), np.abs(low - prev_close)]), axis=0
+    )
+    return float(np.nanmean(tr) / close.mean())
 
 
 def load_corpus(parquet_root) -> pd.DataFrame:
@@ -133,48 +164,73 @@ def build_grid(
         raise KeyError(f"unknown split {split!r}")
     start_bound, end_bound = (pd.Timestamp(d) for d in SPLITS[split])
 
-    out = EvalGrid([], [], [], [], [], np.empty((0, horizon)), np.empty((0, lookback)), np.empty(0))
+    features: dict[str, np.ndarray] = {}
+    stamps: dict[str, pd.DatetimeIndex] = {}
+    win_tickers: list[str] = []
+    offsets: list[int] = []
+    start_dates: list[pd.Timestamp] = []
     y_close, hist_close, atrs = [], [], []
+
+    close_i = FEATURE_COLUMNS.index("close")
+    high_i = FEATURE_COLUMNS.index("high")
+    low_i = FEATURE_COLUMNS.index("low")
 
     for ticker, g in corpus.groupby("ticker", sort=True):
         if tickers is not None and ticker not in tickers:
             continue
-        g = g.reset_index(drop=True)
-        in_split = np.flatnonzero((g["timestamps"] >= start_bound) & (g["timestamps"] <= end_bound))
+        ts = pd.DatetimeIndex(g["timestamps"])
+        feats = g[FEATURE_COLUMNS].to_numpy(dtype=float)
+
+        in_split = np.flatnonzero((ts >= start_bound) & (ts <= end_bound))
         if len(in_split) == 0:
             continue
 
+        used = False
         for target_start in range(in_split[0], in_split[-1] + 1, stride):
-            # The whole target must lie inside the split and inside the data.
             target_end = target_start + horizon
-            if target_end > len(g) or target_start < lookback:
+            if target_end > len(feats) or target_start < lookback:
                 continue
-            if g.loc[target_end - 1, "timestamps"] > end_bound:
+            if ts[target_end - 1] > end_bound:
                 continue
 
-            x = g.iloc[target_start - lookback : target_start]
-            y = g.iloc[target_start:target_end]
+            win_tickers.append(ticker)
+            offsets.append(int(target_start))
+            start_dates.append(ts[target_start])
+            y_close.append(feats[target_start:target_end, close_i])
+            hist_close.append(feats[target_start - lookback : target_start, close_i])
+            atrs.append(
+                average_true_range_pct(
+                    feats[target_start - lookback : target_start, high_i],
+                    feats[target_start - lookback : target_start, low_i],
+                    feats[target_start - lookback : target_start, close_i],
+                )
+            )
+            used = True
 
-            out.tickers.append(ticker)
-            out.start_dates.append(y["timestamps"].iloc[0])
-            out.x_frames.append(x[CANONICAL_COLUMNS[1:]].reset_index(drop=True))
-            out.x_timestamps.append(x["timestamps"].reset_index(drop=True))
-            out.y_timestamps.append(y["timestamps"].reset_index(drop=True))
-            y_close.append(y["close"].to_numpy(dtype=float))
-            hist_close.append(x["close"].to_numpy(dtype=float))
-            atrs.append(average_true_range_pct(x))
+        if used:  # only retain arrays a window actually references
+            features[ticker] = feats
+            stamps[ticker] = ts
 
-    out.y_close = np.array(y_close) if y_close else np.empty((0, horizon))
-    out.history_close = np.array(hist_close) if hist_close else np.empty((0, lookback))
-    out.atr_pct = np.array(atrs)
-    out.meta = {
+    grid = EvalGrid(
+        features=features,
+        timestamps=stamps,
+        tickers=win_tickers,
+        offsets=offsets,
+        start_dates=start_dates,
+        y_close=np.array(y_close) if y_close else np.empty((0, horizon)),
+        history_close=np.array(hist_close) if hist_close else np.empty((0, lookback)),
+        atr_pct=np.array(atrs),
+        lookback=lookback,
+        horizon=horizon,
+    )
+    grid.meta = {
         "split": split,
         "split_range": SPLITS[split],
         "lookback": lookback,
         "horizon": horizon,
         "stride": stride,
-        "n_windows": len(out.tickers),
-        "n_tickers": len(set(out.tickers)),
-        "n_distinct_start_dates": len(set(out.start_dates)),
+        "n_windows": len(win_tickers),
+        "n_tickers": len(features),
+        "n_distinct_start_dates": len(set(start_dates)),
     }
-    return out
+    return grid

@@ -21,6 +21,8 @@ Usage (PowerShell):
 from __future__ import annotations
 
 import argparse
+import contextlib
+import json
 import sys
 import time
 from pathlib import Path
@@ -75,7 +77,33 @@ TOP_P_SWEEP = (0.9, 0.99, 1.0)
 PRODUCTION_TOP_P = 0.9
 
 
-def kronos_ensemble(sampler, grid, sample_count, top_p, temperature, seed, batch_size):
+def write_progress(run_dir: Path | None, stage: str, done: int, total: int) -> None:
+    """Heartbeat for ``watch_run.py``.
+
+    A long run's only progress signal was a carriage-returned stdout line, which is
+    invisible to anything but the terminal that launched it. This lets a status window
+    attached to the run directory report real progress instead of an estimate.
+    """
+    if run_dir is None:
+        return
+    with contextlib.suppress(OSError):  # never let telemetry break the run
+        (run_dir / "progress.json").write_text(
+            json.dumps({"stage": stage, "done": done, "total": total, "at": time.time()}, indent=2),
+            encoding="utf-8",
+        )
+
+
+def kronos_ensemble(
+    sampler,
+    grid,
+    sample_count,
+    top_p,
+    temperature,
+    seed,
+    batch_size,
+    run_dir=None,
+    stage="kronos",
+):
     """Sampled close-price paths for the whole grid, shaped (n_windows, horizon, m)."""
     from eval.sampler import FEATURE_COLUMNS
 
@@ -83,10 +111,13 @@ def kronos_ensemble(sampler, grid, sample_count, top_p, temperature, seed, batch
     chunks = []
     for start in range(0, len(grid), batch_size):
         stop = min(start + batch_size, len(grid))
+        # Built one batch at a time; holding all of them is what drove the machine
+        # into paging on the full grid.
+        df_list, x_ts, y_ts = grid.batch(start, stop)
         paths = sampler.sample(
-            grid.x_frames[start:stop],
-            grid.x_timestamps[start:stop],
-            grid.y_timestamps[start:stop],
+            df_list,
+            x_ts,
+            y_ts,
             pred_len=grid.y_close.shape[1],
             T=temperature,
             top_k=0,
@@ -96,6 +127,7 @@ def kronos_ensemble(sampler, grid, sample_count, top_p, temperature, seed, batch
         )
         chunks.append(paths[:, :, :, close_idx])  # (n, m, horizon)
         print(f"    windows {stop}/{len(grid)}", end="\r", flush=True)
+        write_progress(run_dir, stage, stop, len(grid))
     print()
     return np.concatenate(chunks, axis=0).transpose(0, 2, 1)  # -> (n, horizon, m)
 
@@ -121,6 +153,8 @@ def sweep_top_p(sampler, grid, args, run_dir, payload=None):
             args.temperature,
             args.seed,
             args.batch_size,
+            run_dir=run_dir,
+            stage=f"sweep_top_p_{top_p}",
         )
         sweep_ens[f"top_p_{top_p}"] = ens
         s = summarize(sub.y_close, ens, sub.block_ids, seed=args.seed)
@@ -197,7 +231,7 @@ def checkpoint(run_dir: Path, grid, ensembles, payload: dict, label: str, filena
     """Flush everything computed so far to disk.
 
     Long GPU runs on this hardware have twice died mid-flight and lost work that was
-    already finished and sitting in memory — a completed 45-window grid in one case. The
+    already finished and sitting in memory -- a completed 45-window grid in one case. The
     harness previously wrote nothing until the very end, so any failure cost the whole
     run. Checkpointing after each stage turns that into the loss of one stage.
     """
@@ -341,6 +375,8 @@ def main() -> int:
             args.temperature,
             args.seed,
             args.batch_size,
+            run_dir=run_dir,
+            stage="kronos_zeroshot",
         )
         wall = time.perf_counter() - t0
 
@@ -394,8 +430,8 @@ def main() -> int:
         from eval.figures import write_all
 
         subtitle = (
-            f"{args.split} split · {len(grid)} windows · {len(set(grid.start_dates))} blocks · "
-            f"m={args.sample_count} · {QUANTILE_METHOD} quantiles"
+            f"{args.split} split - {len(grid)} windows - {len(set(grid.start_dates))} blocks - "
+            f"m={args.sample_count} - {QUANTILE_METHOD} quantiles"
         )
         figures = write_all(
             grid.y_close,
