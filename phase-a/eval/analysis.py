@@ -120,6 +120,71 @@ def z_ratio_table(obs: np.ndarray, ens: np.ndarray, levels=(0.50, 0.80, 0.90)) -
     }
 
 
+def _rank(x: np.ndarray) -> np.ndarray:
+    """Average ranks, ties shared — Spearman without a scipy dependency."""
+    order = np.argsort(x, kind="mergesort")
+    ranks = np.empty(len(x), dtype=float)
+    ranks[order] = np.arange(len(x), dtype=float)
+    _, inverse, counts = np.unique(x, return_inverse=True, return_counts=True)
+    sums = np.zeros(len(counts))
+    np.add.at(sums, inverse, ranks)
+    return (sums / counts)[inverse]
+
+
+def cross_sectional_ic(
+    obs: np.ndarray,
+    ens: np.ndarray,
+    history: np.ndarray,
+    start_dates: np.ndarray,
+    steps: tuple[int, ...] = (1, 5, 10, 30),
+    min_names: int = 5,
+) -> dict:
+    """Information Coefficient — the objective the upstream paper actually reports.
+
+    Kronos's headline evaluation is cross-sectional: within each date, does the model rank
+    assets correctly against one another? The ablation reports IC ~0.043 and RankIC ~0.025
+    for Kronos-small on price forecasting. That is a **different claim** from per-series
+    probabilistic trajectory accuracy — a model can rank a cross-section usefully while
+    producing badly calibrated cones, so a poor CRPS does not by itself contradict the
+    paper.
+
+    IC is the Pearson correlation between predicted and realized return within a date,
+    averaged over dates; RankIC is the same on ranks. Dates with fewer than ``min_names``
+    tickers are skipped, since a correlation over three points is noise.
+    """
+    last = history[:, -1]
+    median = np.quantile(ens, 0.5, axis=-1, method=QUANTILE_METHOD)
+    dates = np.asarray(start_dates)
+
+    out: dict[str, dict] = {}
+    for step in [s for s in steps if s <= obs.shape[1]]:
+        h = step - 1
+        pred_ret = median[:, h] / last - 1.0
+        real_ret = obs[:, h] / last - 1.0
+
+        ics, rank_ics, used = [], [], 0
+        for d in np.unique(dates):
+            idx = np.flatnonzero(dates == d)
+            if len(idx) < min_names:
+                continue
+            p, r = pred_ret[idx], real_ret[idx]
+            if np.std(p) < 1e-12 or np.std(r) < 1e-12:
+                continue
+            ics.append(float(np.corrcoef(p, r)[0, 1]))
+            rank_ics.append(float(np.corrcoef(_rank(p), _rank(r))[0, 1]))
+            used += 1
+
+        out[str(step)] = {
+            "ic": float(np.mean(ics)) if ics else None,
+            "rank_ic": float(np.mean(rank_ics)) if rank_ics else None,
+            "ic_std": float(np.std(ics, ddof=1)) if len(ics) > 1 else None,
+            "n_dates_used": used,
+            "n_dates_total": int(len(np.unique(dates))),
+            "min_names_per_date": min_names,
+        }
+    return out
+
+
 def oracle_recenter(obs: np.ndarray, ens: np.ndarray) -> np.ndarray:
     """Subtract each window-step's OWN realized median error. **Degenerate — do not use.**
 

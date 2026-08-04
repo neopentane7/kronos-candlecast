@@ -447,6 +447,82 @@ facts bear on attainability:
 nominal level**, not on whether a point estimate lands inside ±2pp. *Awaiting explicit
 approval; this is a change to a documented milestone.*
 
+## 17a. Pre-registered outcome rules — fixed 2026-08-03, before the full grid ran
+
+A literature check settled two questions the earlier revisions left open, and the answers
+change the framing rather than the plan. Both rules below are recorded **before** the
+708-window grid executed.
+
+### What the literature establishes
+
+**Our zero-shot result is expected, not anomalous.** A June 2026 benchmark of six TSFMs
+(TimeGPT, TimesFM-2.5, Moirai-2.0, Chronos, Chronos-2) on daily US equities finds gains
+over a random-walk benchmark are small and sparse — a one-sided Diebold–Mariano test
+rejects equal-or-inferior accuracy in only two of all model-asset comparisons. Rahimikia
+et al. (2025) evaluate zero-shot, fine-tuned and from-scratch pretraining across TSFM
+families on a global excess-return panel and find off-the-shelf models underperform
+standard benchmarks in **both** the zero-shot and the fine-tuned regimes; only
+finance-native pretraining at scale closes the gap. Their argument for why is a KL-budget
+one: fine-tuning on a small local sample cannot move the model far from its pretraining
+prior without paying a generalization penalty. **Our 123,480-bar corpus is small in
+exactly that sense.**
+
+**We are also measuring something the Kronos paper does not claim.** Its headline
+evaluation is cross-sectional — IC and RankIC on price-series forecasting, with the
+ablation reporting IC ≈ 0.043 and RankIC ≈ 0.025 for Kronos-small. An IC of 0.04 means
+"very slightly better than random at ranking assets against one another." That is
+compatible with losing to a random walk on 30-step per-series CRPS: **rank skill across a
+cross-section and probabilistic trajectory accuracy on a single series are different
+games.** Our zero-shot gate therefore does not contradict the paper.
+
+Because of that, the harness now also computes **cross-sectional IC and RankIC**
+(`eval/analysis.py:cross_sectional_ic`), so the model is judged on its own stated
+objective alongside ours. The full grid supplies ~59 names per date across 12 dates, which
+is a usable cross-section; the 45-window preliminary panel had 3.8 names per date and its
+IC values are noise.
+
+### Rule A3 — outcome of the zero-shot gate
+
+> If the full 708-window grid confirms that zero-shot Kronos-small loses to
+> **conformalized random-walk-drift on fair CRPS and interval score**, milestone A3 is
+> recorded as a **FAIL**, and the primary deliverable pivots to a negative result:
+> *"Kronos-small zero-shot on NSE daily 30-step horizons loses to a conformalized random
+> walk, consistent with Rahimikia et al. (2025) and the 2026 TSFM equity benchmark, with a
+> decomposition showing the defect is location error rather than dispersion."*
+
+Corroboration by two independent studies makes that defensible rather than embarrassing.
+The measurement contributions in Part I — the ensemble-size coverage bias, the fair-CRPS
+correction, the band-feasibility ceiling — stand regardless of the Kronos outcome and ride
+along with it.
+
+**Reported alongside, not instead:** if IC/RankIC on the full grid are near the paper's
+0.043 / 0.025, the honest finding is that *rank skill transfers to NSE daily while
+trajectory calibration does not* — a considerably more interesting result than either
+number alone.
+
+### Rule A4 — bounded pilot, not the main event
+
+A4 is downgraded from the project's centrepiece to a single cheap run. The case for
+running it at all, against the KL-budget argument:
+
+- Kronos is **finance-native pretrained** (~12B K-line records), so this is a
+  frequency/market adaptation rather than the domain adaptation that failed in Rahimikia
+  et al. That is a materially different starting position from a generic TSFM.
+- Dispersion at h = 1 measures **0.827**, not the ~0.44 that would indicate a structural
+  tokenizer ceiling. Nothing blocks training from helping.
+
+> **Pilot specification, fixed in advance:** one configuration, a few epochs, no sweep, no
+> hyperparameter search. **Pass bar: the fine-tuned model must beat random-walk-drift on
+> fair CRPS on the preliminary panel.** If a single fine-tune cannot close the 1.69× gap
+> even partway, the KL-budget story holds, A4 stops there, and the result is written up as
+> confirming the published pattern.
+
+### Sequencing
+
+Full grid → bounded A4 pilot → negative-result write-up as the default deliverable.
+**The CandleCast (Phase B) decision is deferred until both land**, since a product built on
+a cone that a random walk produces more cheaply is not a product.
+
 ---
 
 # Part V — Upstream contribution

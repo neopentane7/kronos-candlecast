@@ -349,6 +349,19 @@ def main() -> int:
             grid.y_close, ens, grid.block_ids, seed=args.seed
         )
         payload["slices"] = regime_slices(grid, ens, args.seed)
+        # The upstream paper's own metric. Reported alongside CRPS so a poor probabilistic
+        # score is not mistaken for a refutation of a cross-sectional ranking claim.
+        from eval.analysis import cross_sectional_ic
+
+        payload["cross_sectional_ic"] = {
+            name: cross_sectional_ic(
+                grid.y_close,
+                e,
+                grid.history_close,
+                np.array([str(d.date()) for d in grid.start_dates]),
+            )
+            for name, e in {**ensembles, "kronos_zeroshot": ens}.items()
+        }
         payload["wall_clock"] = {
             "kronos_grid_seconds": round(wall, 1),
             "seconds_per_window": round(wall / len(grid), 3),
