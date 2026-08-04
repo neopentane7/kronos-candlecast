@@ -103,14 +103,38 @@ def kronos_ensemble(
     batch_size,
     run_dir=None,
     stage="kronos",
+    checkpoint_every=10,
 ):
-    """Sampled close-price paths for the whole grid, shaped (n_windows, horizon, m)."""
+    """Sampled close-price paths for the whole grid, shaped (n_windows, horizon, m).
+
+    Checkpoints *within* the stage. The grid stage is the multi-hour one, and this machine
+    has twice lost its GPU part-way through it; stage-boundary checkpointing alone would
+    still discard every completed window. Partial results are flushed every
+    ``checkpoint_every`` batches and reloaded on restart.
+
+    Resume is exact rather than approximate: each batch is seeded with ``seed + start``,
+    which depends only on its own offset, so skipping completed batches reproduces the
+    same draws a clean run would have made.
+    """
     from eval.sampler import FEATURE_COLUMNS
 
     close_idx = FEATURE_COLUMNS.index("close")
+    partial_path = (run_dir / f"partial_{stage}.npy") if run_dir else None
+
+    done = 0
     chunks = []
+    if partial_path is not None and partial_path.exists():
+        with contextlib.suppress(Exception):
+            prior = np.load(partial_path)
+            if prior.ndim == 3 and prior.shape[0] <= len(grid):
+                chunks = [prior]
+                done = prior.shape[0]
+                print(f"    resuming from {done}/{len(grid)} completed windows")
+
     for start in range(0, len(grid), batch_size):
         stop = min(start + batch_size, len(grid))
+        if stop <= done:
+            continue  # already on disk from an earlier attempt
         # Built one batch at a time; holding all of them is what drove the machine
         # into paging on the full grid.
         df_list, x_ts, y_ts = grid.batch(start, stop)
@@ -128,8 +152,18 @@ def kronos_ensemble(
         chunks.append(paths[:, :, :, close_idx])  # (n, m, horizon)
         print(f"    windows {stop}/{len(grid)}", end="\r", flush=True)
         write_progress(run_dir, stage, stop, len(grid))
+
+        batches_done = (stop - 1) // batch_size + 1
+        if partial_path is not None and batches_done % checkpoint_every == 0:
+            with contextlib.suppress(OSError):
+                np.save(partial_path, np.concatenate(chunks, axis=0))
+
     print()
-    return np.concatenate(chunks, axis=0).transpose(0, 2, 1)  # -> (n, horizon, m)
+    full = np.concatenate(chunks, axis=0)
+    if partial_path is not None:
+        with contextlib.suppress(OSError):
+            partial_path.unlink()  # stage complete; the partial is now redundant
+    return full.transpose(0, 2, 1)  # -> (n, horizon, m)
 
 
 def sweep_top_p(sampler, grid, args, run_dir, payload=None):
@@ -278,6 +312,12 @@ def main() -> int:
     ap.add_argument("--sweep-size", type=int, default=60)
     ap.add_argument("--skip-model", action="store_true", help="baselines only")
     ap.add_argument("--no-figures", action="store_true", help="skip figure rendering")
+    ap.add_argument(
+        "--resume",
+        type=Path,
+        default=None,
+        help="continue an interrupted run directory instead of starting a new one",
+    )
     args = ap.parse_args()
 
     # Fail before spending GPU time if the requested bands are unconstructible.
@@ -310,7 +350,14 @@ def main() -> int:
         f"{len(set(grid.start_dates))} distinct start dates"
     )
 
-    run_dir = new_run_dir()
+    if args.resume:
+        if not args.resume.exists():
+            print(f"cannot resume: {args.resume} does not exist")
+            return 1
+        run_dir = args.resume
+        print(f"resuming into {run_dir}")
+    else:
+        run_dir = new_run_dir()
     payload = {
         "run": "A3_zero_shot_gate",
         "split": args.split,
