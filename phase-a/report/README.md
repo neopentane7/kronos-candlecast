@@ -28,7 +28,7 @@ stated in place rather than silently applied. There are three such corrections, 
 
 | Part | Question |
 |---|---|
-| [I](#part-i--validating-the-instrument) | Does the measurement layer measure what it claims? |
+| [I](#part-i--validating-the-instrument) | Does the measurement layer measure what it claims — and do its checks check anything? |
 | [II](#part-ii--zero-shot-results) | How good is pretrained Kronos-small on NSE daily bars? |
 | [III](#part-iii--can-calibration-repair-it) | Can conformal calibration repair what we found? |
 | [IV](#part-iv--a5-protocol-pre-registered) | What will A5 do, decided before results exist? |
@@ -157,6 +157,43 @@ verification scores is well established in numerical weather prediction. What ma
 underappreciated is that it **contaminates coverage claims in the time-series-foundation-
 model literature**, where small `sample_count` defaults are common and published coverage
 numbers routinely omit both quantities needed to interpret them.
+
+## 4a. A test must prove it tested something
+
+The defects in §1–3 were in the measurement layer. A separate class showed up repeatedly,
+and it is worth stating on its own because the remedy generalises: **verification code has
+preconditions too, and nothing checks them, because the verification is the thing being
+trusted.**
+
+Three specimens from this project, all found after the code was written and believed:
+
+| verification | how it could pass without verifying |
+|---|---|
+| the original port check | **printed** expected values for a human to compare. A check you have to read is a check that gets skipped when you are in a hurry. |
+| its replacement | asserted against `sorted(glob("results/*/results.json"))[-1]` — the *newest* run, not the one it had just produced. A restored `results/` or a second invocation would validate an older run while the new one failed. |
+| the resume arm of the GPU twin check | kills the run at its first flushed checkpoint and resumes. At `limit 60`, `batch 24` there are 3 batches, so the production checkpoint cadence of 5 **never fires** — nothing is flushed, the "resume" resumes nothing, and the arm reports the resume path verified. |
+
+The third is the cleanest specimen because the arm is *itself* a test, written specifically
+to catch a subtle failure, and its own configuration could silently make it vacuous. No
+downstream signal would have appeared: the run completes, the arrays match, the check
+prints PASS.
+
+The remedy in each case was the same and is not a patch: **make the verification assert its
+own preconditions.** The port check now records the run directories before launching and
+binds to the one it created. The twin arm now asserts that its batch count is at least two
+and that its checkpoint cadence actually fires, so a configuration that could not detect a
+resume bug refuses to run rather than passing.
+
+The general form: *a passing test is evidence only if the test could have failed.* That is
+a familiar idea in mutation testing, but the cases here are not about weak assertions — the
+assertions were fine. They are about **arrangements that never reach the assertion**, which
+mutation coverage does not surface either. Wherever a check depends on a configuration
+value (a cadence, a sample count, a glob, an ordering), that dependency is a precondition
+and deserves an assert next to it.
+
+This is also, in retrospect, why the instrument work in §1–3 was worth doing before any
+model claim: every guard in this project eventually needed a guard, and the ones that
+never got a second look are the ones that were quietly wrong for longest.
 
 ---
 
