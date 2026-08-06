@@ -1,0 +1,121 @@
+{
+  "git_sha": "64c392a-dirty",
+  "disclaimer": "Research/education tool - scenario visualization, not investment advice.",
+  "run": "A3_diagnostics",
+  "source_run": "20260803T095254Z_397dbc9",
+  "blocks_per_stratum": {
+    "n_windows": 45,
+    "effective_blocks_overall": 12,
+    "band_feasibility_floor": {
+      "50": 3,
+      "80": 9,
+      "90": 19
+    },
+    "strata": {
+      "calm": {
+        "n_windows": 15,
+        "effective_blocks": 8,
+        "windows_per_block_max": 3,
+        "windows_per_block_median": 2.0,
+        "share_of_all_blocks": 0.6667,
+        "feasible_by_windows": {
+          "50": true,
+          "80": true,
+          "90": false
+        },
+        "feasible_by_blocks": {
+          "50": true,
+          "80": false,
+          "90": false
+        }
+      },
+      "mid": {
+        "n_windows": 15,
+        "effective_blocks": 8,
+        "windows_per_block_max": 3,
+        "windows_per_block_median": 1.5,
+        "share_of_all_blocks": 0.6667,
+        "feasible_by_windows": {
+          "50": true,
+          "80": true,
+          "90": false
+        },
+        "feasible_by_blocks": {
+          "50": true,
+          "80": false,
+          "90": false
+        }
+      },
+      "volatile": {
+        "n_windows": 15,
+        "effective_blocks": 10,
+        "windows_per_block_max": 3,
+        "windows_per_block_median": 1.0,
+        "share_of_all_blocks": 0.8333,
+        "feasible_by_windows": {
+          "50": true,
+          "80": true,
+          "90": false
+        },
+        "feasible_by_blocks": {
+          "50": true,
+          "80": true,
+          "90": false
+        }
+      }
+    }
+  },
+  "spread_vs_input_vol": {
+    "vol_lookback_days": 20,
+    "n_windows": 45,
+    "effective_blocks": 12,
+    "quantile_method": "weibull",
+    "models": {
+      "last_value": {
+        "degenerate": true,
+        "relative_spread_h1": 0.0
+      },
+      "random_walk_drift": {
+        "spearman_spread_vs_input_vol": 0.1464,
+        "ci95_block_bootstrap": [
+          -0.107,
+          0.4349
+        ],
+        "elasticity_log_spread_on_log_vol": 0.132,
+        "elasticity_ci95": [
+          -0.0727,
+          0.324
+        ],
+        "mean_relative_spread_h1": 0.04653820920844144,
+        "spread_dispersion_cv": 0.23848551806220572
+      },
+      "kronos_zeroshot": {
+        "spearman_spread_vs_input_vol": 0.3532,
+        "ci95_block_bootstrap": [
+          -0.0489,
+          0.6314
+        ],
+        "elasticity_log_spread_on_log_vol": 0.4992,
+        "elasticity_ci95": [
+          0.007,
+          0.9208
+        ],
+        "mean_relative_spread_h1": 0.03911648020989302,
+        "spread_dispersion_cv": 0.6351957124893598
+      }
+    },
+    "ceiling_future_vol_vs_input_vol": {
+      "spearman": 0.5171,
+      "ci95_block_bootstrap": [
+        0.1691,
+        0.7115
+      ],
+      "elasticity_log_spread_on_log_vol": 0.5487,
+      "elasticity_ci95": [
+        0.2763,
+        0.7727
+      ],
+      "note": "volatility persistence -- what a regime-aware forecaster could exploit"
+    }
+  }
+}
