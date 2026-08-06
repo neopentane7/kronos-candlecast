@@ -619,11 +619,84 @@ The detector was written because the defect was invisible: nothing errored, no s
 check fired, and the number it corrupted was the one used to argue that the sample was
 adequate.
 
-> **Open decision (needs approval):** dropping ITC's orphan session realigns the grid and
-> restores 12/12 blocks, but it changes the corpus and therefore re-baselines the golden
-> numbers the Kaggle port check asserts (89.0381 / 67.2363 / 0.8369 / 22 blocks). That is
-> a cheap re-run, but it is a change to a committed measurement and is not made
-> unilaterally. **Every block count below uses the corrected value of 12.**
+### Corpus-wide audit, before correcting anything
+
+The ITC bar was found only because it split the grid's blocks. A gap that never landed on
+a window boundary would not have announced itself, so the whole corpus was scanned once
+(`phase-a/scripts/audit_calendar.py`) rather than patching the one date that happened to
+be visible. 59 tickers, 2018-01-01 → 2026-06-30:
+
+| disagreement | count | treatment |
+|---|---|---|
+| universe trades, XBOM does not list it | 7 | **kept** — all Diwali Muhurat sessions |
+| XBOM lists it, universe has no data | 4 | 2019-02-13, 2019-03-29, 2024-01-20, 2025-03-18 |
+| ticker has a bar the universe lacks (**orphan**) | 1 | **dropped** — `ITC` 2025-03-18 |
+| ticker lacks a bar the universe has (**hole**) | 9 | **carried** — not fixable |
+
+Holes: `BRITANNIA` and `JSWSTEEL` each lack 4 sessions (2018-11-07, 2021-11-04,
+2022-09-12, 2022-10-24 — three of them Muhurat), `BAJAJ-AUTO` lacks 2024-01-15. Filling
+them requires refetching, and refetching re-runs back-adjustment against a later
+corporate-action history, which rewrites prices across the entire series rather than
+patching one date. They stay, and they are why the val split is still not perfectly
+aligned (below).
+
+**Which side is the defect on?** 2025-03-18 *is* an XBOM session, and ITC's bar for it is
+internally plausible — OHLC 410.00 / 411.95 / 407.75 / 409.10 on 13.9M shares, sitting
+smoothly between the 17th (close 407.95) and the 19th (open 410.00), not a duplicate of
+either. So the more likely reading is that **58 tickers have a hole on a valid session and
+ITC is the only correct one**, which is a yfinance reliability finding rather than a bad
+bar. XBOM already disagrees with the unanimous universe on three other dates, so this
+cannot be settled from the corpus alone. The action is the same either way — grid
+semantics are the intersection of dates, and a window cannot be forecast against a
+universe with no data there — but the changelog records it as *aligned to a majority gap
+on a valid session*, not *removed a bad bar*.
+
+### After the correction
+
+| split | before | after |
+|---|---|---|
+| test (2025 – Jun 2026) | 22 blocks, 10 orphan | **12 blocks, 0 orphan** |
+| val (2024) | 15 blocks, 7 orphan | 15 blocks, 7 orphan — **unchanged** |
+
+The test split is now exactly aligned: 12 dates × 59 tickers. The val split is not, and
+cannot be: all 7 of its orphan blocks are `BAJAJ-AUTO`, displaced by its 2024-01-15 hole,
+which falls inside the val enumeration range. The 2024 calibration set therefore rests on
+**8 shared blocks**, and `BAJAJ-AUTO`'s 7 orphan windows are excluded from any conformal
+fit or block bootstrap (§17d).
+
+### What the correction did *not* change — a correction to this report
+
+The expectation on first finding the defect was that every previously reported confidence
+interval was too narrow, having resampled ten singleton pseudo-blocks as independent
+units. **Measured, that is wrong.** Re-running the baselines on the corrected corpus:
+
+| | before (22 blocks) | after (12 blocks) | ratio |
+|---|---|---|---|
+| `last_value` CRPS | 89.0381 | 89.0453 | +0.008% |
+| `random_walk_drift` CRPS | 67.2363 | 67.2415 | +0.008% |
+| RW cov@80 | 0.8369 | 0.8370 | — |
+| RW cov@80 CI width | 0.0758 | 0.0758 | **1.000×** |
+| RW cov@50 CI width | 0.1087 | 0.1125 | 1.035× |
+| RW cov@90 CI width | 0.0571 | 0.0547 | 0.959× |
+
+Each orphan block held **one window out of 708**, so resampling 22 groups of which ten
+were singletons produced almost the same variance as resampling the 12 real ones. The
+intervals were already effectively driven by the 12 genuine blocks.
+
+**The reported effective sample size was still wrong, and that is what mattered** — it is
+the input to the power analysis in §17c, where 22 versus 12 is the difference between an
+18.5% and a 13.8% pass probability. The defect corrupted the sample-size *claim*, not the
+intervals computed under it.
+
+### Provenance after the correction
+
+The corpus is gitignored and travels separately as a zip, so a git SHA does not identify
+which prices produced a number. `phase-a/eval/golden.json` now carries the baseline
+metrics **and** a structural corpus fingerprint (`common/corpus.py`), and is the single
+source read by both the Kaggle port check and `tests/test_golden.py`. A runner holding a
+pre-correction dataset is refused in the first seconds with an instruction to re-upload,
+rather than reproducing superseded numbers perfectly and failing the port check hours
+later in a way that looks like a harness bug.
 
 ## 17c. §17 amendment — the ±2pp criterion was mis-specified, not inconvenient
 

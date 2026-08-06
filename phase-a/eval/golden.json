@@ -1,0 +1,32 @@
+{
+  "disclaimer": "Research/education tool - scenario visualization, not investment advice.",
+  "generated_from_run": "20260806T060520Z_c1fbab9",
+  "git_sha": "c1fbab9",
+  "split": "test",
+  "n_windows": 708,
+  "effective_blocks": 12,
+  "corpus": {
+    "digest": "0a990f9881418544",
+    "n_tickers": 59,
+    "n_rows": 123479,
+    "first": "2018-01-01",
+    "last": "2026-06-30"
+  },
+  "tolerances": {
+    "crps": 0.001,
+    "coverage": 0.0001
+  },
+  "models": {
+    "last_value": {
+      "crps": 89.0453,
+      "interval_score_80": 890.453,
+      "coverage_80": 0.0008
+    },
+    "random_walk_drift": {
+      "crps": 67.2415,
+      "interval_score_80": 462.8375,
+      "coverage_80": 0.837
+    }
+  },
+  "note": "Regenerate with phase-a/scripts/make_golden.py after any corpus correction. Both the Kaggle notebook port check and tests/test_golden.py read this file."
+}

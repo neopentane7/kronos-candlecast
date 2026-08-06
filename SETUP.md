@@ -98,27 +98,40 @@ Run these in order. Each is cheap and catches a different class of transfer erro
 
 ```bash
 # 1. environment + everything that needs no GPU
-uv run pytest -q                        # expect 117 passed (2 skip without CUDA)
+uv run pytest -q                        # expect 139 passed (2 skip without CUDA)
 
-# 2. corpus arrived intact — expect 59 tickers, 123,480 bars, 0 zero-volume,
+# 2. corpus arrived intact — expect 59 tickers, 123,479 bars, 0 zero-volume,
 #    amount proxy error exactly 0.0
 uv run python phase-a/scripts/build_dataset.py
 
-# 3. the overlay still matches upstream bit-for-bit (needs GPU)
+# 3. the corpus is the one the golden numbers were measured on, and no ticker
+#    trades on a date the rest of the universe does not
+uv run python phase-a/scripts/audit_calendar.py     # expect 0 orphan rows
+
+# 4. the overlay still matches upstream bit-for-bit (needs GPU)
 uv run pytest tests/test_sampler_equivalence.py -q
 
-# 4. numbers reproduce. Baselines are deterministic from the grid and seed,
-#    so these must match exactly:
-uv run python phase-a/eval/calibrate.py --split test --skip-model --no-figures
-#    last_value          CRPS 89.0381   cov@80 0.0008   IS 890.381
-#    random_walk_drift   CRPS 67.2363   cov@80 0.8369   IS 462.799
-#    effective blocks: 22
+# 5. numbers reproduce. Baselines are deterministic from the grid and seed, so
+#    these must match. They are NOT restated here — they live in
+#    phase-a/eval/golden.json and this test reads them:
+uv run pytest tests/test_golden.py -q
 ```
 
-**Step 4 is the real test of the port.** If those four numbers match, the corpus, the
-window enumeration, the metric layer and the seeding all survived the move. If they
-differ, the corpus is not the same one — almost certainly because `fetch_nse.py` was
-re-run.
+**Steps 3 and 5 are the real test of the port.** If the fingerprint matches and the
+numbers reproduce, the corpus, the window enumeration, the metric layer and the seeding
+all survived the move.
+
+The expected values deliberately do **not** appear in this document. They lived in three
+places once — here, the Kaggle notebook, and a comment in the harness — and a corpus
+correction on 2026-08-06 changed all of them. They now live only in
+`phase-a/eval/golden.json`, which also carries a structural fingerprint of the corpus that
+produced them, so a mismatch tells you *which* of the two drifted.
+
+> **Corpus correction, 2026-08-06.** One orphan session (`ITC`, 2025-03-18) was dropped;
+> the corpus is 123,479 rows, not 123,480, and the test split has 12 effective blocks, not
+> 22. If you are restoring an archive made before that date, the fingerprint check will
+> refuse it. Re-zip from a corrected `data/` rather than re-running `fetch_nse.py` —
+> refetching re-runs back-adjustment and produces a third corpus. See report §17b.
 
 ---
 

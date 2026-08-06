@@ -52,6 +52,10 @@ package = false
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+markers = [
+    # Runs the real harness end to end (~1 min). Deselect with -m "not slow".
+    "slow: exercises a subprocess run of the evaluation harness",
+]
 
 [tool.ruff]
 line-length = 100
