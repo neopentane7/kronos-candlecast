@@ -1,15 +1,17 @@
 """Resume must reproduce an uninterrupted run exactly.
 
-A resume that merely *runs* is worthless — if the restarted portion draws different
+A resume that merely *runs* is worthless: if the restarted portion draws different
 samples, the grid silently mixes two different forecasters and every downstream metric is
 wrong in a way no test would catch. These use a fake sampler so the property is checked
 without a GPU.
 """
 
+import json
 import sys
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "phase-a"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -160,12 +162,85 @@ def test_partial_wider_than_the_grid_is_ignored(tmp_path):
     assert out.shape == (N_WINDOWS, HORIZON, SAMPLES)
 
 
+def test_resuming_with_a_different_batch_size_is_refused(tmp_path):
+    """The subtle one: seeds are `seed + start`, so batch boundaries decide the draws.
+
+    Resuming at a different batch size would reseed every remaining window and splice
+    two different forecasters into one grid, with no downstream signal that it happened.
+    """
+    run_dir = tmp_path / "r"
+    run_dir.mkdir()
+    reference = run(FakeGrid(), FakeSampler(), run_dir, batch_size=4)
+    prior = np.stack([reference.transpose(0, 2, 1)[i] for i in range(12)])
+    np.save(run_dir / "partial_test.npy", prior)
+    (run_dir / "partial_test.meta.json").write_text(
+        json.dumps(
+            {
+                "batch_size": 4,
+                "sample_count": SAMPLES,
+                "top_p": 0.9,
+                "temperature": 1.0,
+                "seed": 1234,
+                "n_windows": N_WINDOWS,
+                "horizon": HORIZON,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit, match="batch_size"):
+        run(FakeGrid(), FakeSampler(), run_dir, batch_size=6)
+
+
+def test_resuming_with_matching_parameters_is_allowed(tmp_path):
+    run_dir = tmp_path / "r"
+    run_dir.mkdir()
+    reference = run(FakeGrid(), FakeSampler(), run_dir, batch_size=4)
+
+    prior = np.stack([reference.transpose(0, 2, 1)[i] for i in range(12)])
+    np.save(run_dir / "partial_test.npy", prior)
+    (run_dir / "partial_test.meta.json").write_text(
+        json.dumps(
+            {
+                "batch_size": 4,
+                "sample_count": SAMPLES,
+                "top_p": 0.9,
+                "temperature": 1.0,
+                "seed": 1234,
+                "n_windows": N_WINDOWS,
+                "horizon": HORIZON,
+            }
+        ),
+        encoding="utf-8",
+    )
+    resumed = run(FakeGrid(), FakeSampler(), run_dir, batch_size=4)
+    np.testing.assert_allclose(resumed, reference, rtol=0, atol=0)
+
+
+def test_a_partial_without_a_signature_still_resumes(tmp_path):
+    """Backward compatibility: partials written before signatures existed."""
+    run_dir = tmp_path / "r"
+    run_dir.mkdir()
+    reference = run(FakeGrid(), FakeSampler(), run_dir)
+    prior = np.stack([reference.transpose(0, 2, 1)[i] for i in range(12)])
+    np.save(run_dir / "partial_test.npy", prior)  # no .meta.json alongside
+
+    resumed = run(FakeGrid(), FakeSampler(), run_dir)
+    np.testing.assert_allclose(resumed, reference, rtol=0, atol=0)
+
+
+def test_signature_is_written_and_cleaned_up(tmp_path):
+    run_dir = tmp_path / "r"
+    run_dir.mkdir()
+    run(FakeGrid(), FakeSampler(), run_dir)
+    assert not (run_dir / "partial_test.meta.json").exists()
+    assert not (run_dir / "partial_test.npy").exists()
+
+
 def test_progress_heartbeat_is_written(tmp_path):
     run_dir = tmp_path / "r"
     run_dir.mkdir()
     run(FakeGrid(), FakeSampler(), run_dir)
-
-    import json
 
     progress = json.loads((run_dir / "progress.json").read_text())
     assert progress["stage"] == "test"

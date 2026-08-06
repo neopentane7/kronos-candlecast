@@ -120,16 +120,50 @@ def kronos_ensemble(
 
     close_idx = FEATURE_COLUMNS.index("close")
     partial_path = (run_dir / f"partial_{stage}.npy") if run_dir else None
+    meta_path = (run_dir / f"partial_{stage}.meta.json") if run_dir else None
+
+    # Every field here changes which draws a window receives, so resuming with any of
+    # them altered would splice two different forecasters together. batch_size is the
+    # subtle one: seeds are `seed + start`, and start depends on the batch boundaries,
+    # so changing the batch size silently reseeds every remaining window.
+    signature = {
+        "batch_size": batch_size,
+        "sample_count": sample_count,
+        "top_p": top_p,
+        "temperature": temperature,
+        "seed": seed,
+        "n_windows": len(grid),
+        "horizon": int(grid.y_close.shape[1]),
+    }
 
     done = 0
     chunks = []
     if partial_path is not None and partial_path.exists():
+        prior = None
         with contextlib.suppress(Exception):
-            prior = np.load(partial_path)
-            if prior.ndim == 3 and prior.shape[0] <= len(grid):
-                chunks = [prior]
-                done = prior.shape[0]
-                print(f"    resuming from {done}/{len(grid)} completed windows")
+            candidate = np.load(partial_path)
+            if candidate.ndim == 3 and candidate.shape[0] <= len(grid):
+                prior = candidate
+
+        if prior is not None:
+            old = {}
+            if meta_path is not None and meta_path.exists():
+                with contextlib.suppress(Exception):
+                    old = json.loads(meta_path.read_text(encoding="utf-8"))
+            changed = {k: (old.get(k), v) for k, v in signature.items() if old.get(k) != v}
+            if old and changed:
+                raise SystemExit(
+                    "cannot resume: the run parameters changed since the partial was "
+                    "written, so the remaining windows would be drawn differently.\n  "
+                    + "\n  ".join(
+                        f"{k}: was {was!r}, now {now!r}" for k, (was, now) in changed.items()
+                    )
+                    + f"\n\nEither restore the original settings or delete {partial_path.name} "
+                    "and start the stage over."
+                )
+            chunks = [prior]
+            done = prior.shape[0]
+            print(f"    resuming from {done}/{len(grid)} completed windows")
 
     for start in range(0, len(grid), batch_size):
         stop = min(start + batch_size, len(grid))
@@ -157,12 +191,15 @@ def kronos_ensemble(
         if partial_path is not None and batches_done % checkpoint_every == 0:
             with contextlib.suppress(OSError):
                 np.save(partial_path, np.concatenate(chunks, axis=0))
+                meta_path.write_text(json.dumps(signature, indent=2), encoding="utf-8")
 
     print()
     full = np.concatenate(chunks, axis=0)
     if partial_path is not None:
-        with contextlib.suppress(OSError):
-            partial_path.unlink()  # stage complete; the partial is now redundant
+        # Stage complete; the partial and its signature are now redundant.
+        for path in (partial_path, meta_path):
+            with contextlib.suppress(OSError):
+                path.unlink()
     return full.transpose(0, 2, 1)  # -> (n, horizon, m)
 
 
