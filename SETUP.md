@@ -127,6 +127,19 @@ correction on 2026-08-06 changed all of them. They now live only in
 `phase-a/eval/golden.json`, which also carries a structural fingerprint of the corpus that
 produced them, so a mismatch tells you *which* of the two drifted.
 
+### Building the upload archive
+
+```bash
+uv run python phase-a/scripts/make_corpus_zip.py
+```
+
+Do **not** use PowerShell's `Compress-Archive` for this. It writes backslash path
+separators into the archive; the ZIP specification requires forward slashes, and Kaggle
+rejects every entry with *"contains a forbidden character in name ('\')"*. The script
+uses `zipfile`, asserts no backslashes survive, and re-extracts the archive to fingerprint
+what a runner would actually see — so an archive built from a stale corpus fails here
+rather than on the runner.
+
 > **Corpus correction, 2026-08-06.** One orphan session (`ITC`, 2025-03-18) was dropped;
 > the corpus is 123,479 rows, not 123,480, and the test split has 12 effective blocks, not
 > 22. If you are restoring an archive made before that date, the fingerprint check will
