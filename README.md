@@ -32,6 +32,10 @@ two paths cannot drift apart across corporate actions; jugaad-data is an indepen
 cross-check (`--cross-check`) and the source of real turnover for the constraint-4
 ablation. Rationale and measurements are in [common/preprocess.py](common/preprocess.py).
 
+**Moving to another machine?** See [SETUP.md](SETUP.md) — the corpus in `data/` (17.6 MB)
+must be copied rather than re-fetched, because back-adjusted prices are rewritten by later
+corporate actions and a re-fetch would silently produce a non-comparable corpus.
+
 ## Setup (Windows / PowerShell)
 
 Requires [uv](https://docs.astral.sh/uv/) and a CUDA GPU (developed on an RTX 4050, 6GB).

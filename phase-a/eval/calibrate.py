@@ -189,6 +189,7 @@ def sweep_top_p(sampler, grid, args, run_dir, payload=None):
             args.batch_size,
             run_dir=run_dir,
             stage=f"sweep_top_p_{top_p}",
+            checkpoint_every=args.checkpoint_every,
         )
         sweep_ens[f"top_p_{top_p}"] = ens
         s = summarize(sub.y_close, ens, sub.block_ids, seed=args.seed)
@@ -265,7 +266,7 @@ def checkpoint(run_dir: Path, grid, ensembles, payload: dict, label: str, filena
     """Flush everything computed so far to disk.
 
     Long GPU runs on this hardware have twice died mid-flight and lost work that was
-    already finished and sitting in memory -- a completed 45-window grid in one case. The
+    already finished and sitting in memory --Â a completed 45-window grid in one case. The
     harness previously wrote nothing until the very end, so any failure cost the whole
     run. Checkpointing after each stage turns that into the loss of one stage.
     """
@@ -312,6 +313,12 @@ def main() -> int:
     ap.add_argument("--sweep-size", type=int, default=60)
     ap.add_argument("--skip-model", action="store_true", help="baselines only")
     ap.add_argument("--no-figures", action="store_true", help="skip figure rendering")
+    ap.add_argument(
+        "--checkpoint-every",
+        type=int,
+        default=10,
+        help="flush partial results every N batches; lower it on unreliable hardware",
+    )
     ap.add_argument(
         "--resume",
         type=Path,
@@ -424,6 +431,7 @@ def main() -> int:
             args.batch_size,
             run_dir=run_dir,
             stage="kronos_zeroshot",
+            checkpoint_every=args.checkpoint_every,
         )
         wall = time.perf_counter() - t0
 
