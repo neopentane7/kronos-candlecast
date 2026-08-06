@@ -1,0 +1,134 @@
+{
+  "git_sha": "c9016b7",
+  "disclaimer": "Research/education tool - scenario visualization, not investment advice.",
+  "run": "A3_zero_shot_gate",
+  "split": "test",
+  "grid": {
+    "split": "test",
+    "split_range": [
+      "2025-01-01",
+      "2026-06-30"
+    ],
+    "lookback": 400,
+    "horizon": 30,
+    "stride": 30,
+    "n_windows": 60,
+    "n_tickers": 38,
+    "n_distinct_start_dates": 12,
+    "subsampled_from": 708,
+    "subsample_seed": 1234,
+    "n_windows_evaluated": 60
+  },
+  "config": {
+    "model": "NeoQuasar/Kronos-small",
+    "tokenizer": "NeoQuasar/Kronos-Tokenizer-base",
+    "lookback": 400,
+    "horizon": 30,
+    "stride": 30,
+    "sample_count": 30,
+    "temperature": 1.0,
+    "top_p": 0.9,
+    "top_k": 0,
+    "seed": 1234
+  },
+  "measurement": {
+    "quantile_method": "weibull",
+    "crps_estimator": "fair",
+    "note": "Coverage and CRPS are both ensemble-size dependent. Weibull plotting positions and Ferro's fair CRPS remove that dependence; naive values are reported alongside so the size of each correction is visible."
+  },
+  "models": {
+    "last_value": {
+      "n_windows": 60,
+      "horizon": 30,
+      "n_samples": 30,
+      "effective_blocks": 12,
+      "point": {
+        "mae": 84.35997024006313,
+        "rmse": 154.94493376278848,
+        "mape": 0.044999187538690505
+      },
+      "crps": 84.35997024006313,
+      "crps_estimator": "fair",
+      "crps_naive": 84.35997024006313,
+      "quantile_method": "weibull",
+      "interval_score_80": 843.5997024006316,
+      "pinball": 42.179985120031574,
+      "coverage": {
+        "50": {
+          "nominal": 0.5,
+          "empirical": 0.0016666666666666668,
+          "ci95": [
+            0.0,
+            0.004445512820512814
+          ],
+          "covers_nominal": false
+        },
+        "80": {
+          "nominal": 0.8,
+          "empirical": 0.0016666666666666668,
+          "ci95": [
+            0.0,
+            0.004445512820512814
+          ],
+          "covers_nominal": false
+        },
+        "90": {
+          "nominal": 0.9,
+          "empirical": 0.0016666666666666668,
+          "ci95": [
+            0.0,
+            0.004445512820512814
+          ],
+          "covers_nominal": false
+        }
+      }
+    },
+    "random_walk_drift": {
+      "n_windows": 60,
+      "horizon": 30,
+      "n_samples": 30,
+      "effective_blocks": 12,
+      "point": {
+        "mae": 85.51730874125764,
+        "rmse": 161.02116182420812,
+        "mape": 0.04705372076097848
+      },
+      "crps": 61.40476078459729,
+      "crps_estimator": "fair",
+      "crps_naive": 63.57670783122738,
+      "quantile_method": "weibull",
+      "interval_score_80": 423.346822477007,
+      "pinball": 31.485415089066347,
+      "coverage": {
+        "50": {
+          "nominal": 0.5,
+          "empirical": 0.5561111111111111,
+          "ci95": [
+            0.46950213219616205,
+            0.649732323232323
+          ],
+          "covers_nominal": true
+        },
+        "80": {
+          "nominal": 0.8,
+          "empirical": 0.8311111111111111,
+          "ci95": [
+            0.7476190476190476,
+            0.9097580967612955
+          ],
+          "covers_nominal": true
+        },
+        "90": {
+          "nominal": 0.9,
+          "empirical": 0.9116666666666666,
+          "ci95": [
+            0.859997175141243,
+            0.956731259968102
+          ],
+          "covers_nominal": true
+        }
+      }
+    }
+  },
+  "last_checkpoint": "baselines"
+}

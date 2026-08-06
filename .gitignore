@@ -12,6 +12,10 @@ __pycache__/
 # pinned SHA by phase-a/scripts/setup_upstream.ps1 rather than vendored here.
 phase-a/Kronos/
 
+# Corpus archive built for uploading to a cloud runner (see cloud/ and SETUP.md).
+# Regenerate from data/ rather than committing it.
+kronos-nse-corpus.zip
+
 # Market data + model artifacts are not committed; only manifests and results are.
 data/
 checkpoints/
