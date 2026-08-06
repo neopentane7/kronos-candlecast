@@ -47,9 +47,15 @@ def new_run_dir() -> Path:
     return run_dir
 
 
-def write_results(run_dir: Path, payload: dict[str, Any]) -> Path:
-    """Write ``results.json``, always stamped with the SHA and the disclaimer."""
-    path = run_dir / "results.json"
+def write_results(run_dir: Path, payload: dict[str, Any], filename: str = "results.json") -> Path:
+    """Write a stamped JSON artifact into ``run_dir``, SHA and disclaimer always attached.
+
+    ``filename`` exists so a later offline pass can deposit its findings *beside* the run
+    it analysed without overwriting the measurement it was derived from. Anything reading
+    a run directory should be able to trust that ``results.json`` is what the run itself
+    produced.
+    """
+    path = run_dir / filename
     payload = {"git_sha": git_sha(), "disclaimer": DISCLAIMER, **payload}
     path.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
     return path

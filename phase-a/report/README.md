@@ -253,6 +253,69 @@ including our baseline. Same windows, same tercile cuts:
 
 Same sign, **16.8%** of the magnitude. General in kind, Kronos-specific in degree.
 
+## 7a. Testing the mechanism — the normalization hypothesis is not supported
+
+§7 asserts a mechanism: per-window instance normalization anchors cone width to trailing
+volatility, so the model cannot see the regime. That is a hypothesis, and it makes a
+falsifiable prediction — if normalization erased the volatility signal, predicted spread
+would be uncorrelated with input volatility. `eval/diagnose.py:spread_vs_input_vol` tests
+it directly, correlating each forecast's h=1 relative spread against the realized
+volatility of its own lookback.
+
+Two quantities are needed, because they come apart:
+
+- **rank correlation** — does the forecaster see volatility at all?
+- **elasticity**, the OLS slope of `log(spread)` on `log(vol)` — how far does it move when
+  volatility doubles?
+
+A normalizer that *compresses* rather than *erases* leaves rank correlation intact while
+driving elasticity toward zero. Reporting only one would misdiagnose the defect, so
+`tests/test_diagnose.py` pins a case where correlation is 1.0 and elasticity is 0.05.
+
+**Instrument validation first.** RW-drift's spread is a deterministic function of the
+volatility it estimates over its own 400-day window, so it must measure a proportional
+response. On the full 708-window grid:
+
+| series | ρ (rank) | β (elasticity) |
+|---|---|---|
+| **random_walk_drift** (positive control) | 0.795 [0.763, 0.820] | **1.011 [0.976, 1.055]** |
+| realized future vol (persistence ceiling) | 0.355 [0.257, 0.515] | 0.601 [0.476, 0.746] |
+
+The control recovers a slope indistinguishable from 1 with a CI of ±0.04. **The test has
+power when the effect is real.**
+
+**The Kronos result** (45-window grid — the full-grid Kronos row does not exist yet):
+
+| series | lookback | ρ (rank) | β (elasticity) |
+|---|---|---|---|
+| kronos_zeroshot | 400d | 0.337 [0.024, 0.602] | 0.522 [−0.373, 1.222] |
+| persistence ceiling | 400d | 0.337 [−0.006, 0.606] | 0.555 [0.007, 0.972] |
+| kronos_zeroshot | 20d | 0.353 [−0.049, 0.631] | 0.499 [0.007, 0.921] |
+| persistence ceiling | 20d | 0.517 [0.169, 0.712] | 0.549 [0.276, 0.773] |
+
+**Kronos's response to input volatility is statistically indistinguishable from the
+persistence ceiling on the same windows**, at both lookbacks and on both statistics. The
+point estimates do not support blindness; they are consistent with a model that tracks
+volatility about as well as volatility persistence allows.
+
+> **Correction to §7.** The mechanism sentence — "the model cannot see the regime" —
+> overstates what is measured. Kronos *does* respond to input volatility. What §7 actually
+> establishes is that its response is insufficient to keep coverage flat across regimes,
+> which is compatible with mild under-response and does not require blindness.
+
+**This does not yet settle it.** At 12 blocks the Kronos elasticity interval spans
+[−0.373, 1.222] — wide enough to admit near-total blindness and full proportional response
+alike. The same statistic is pinned to ±0.04 on the control at n=708, so the shortfall is
+sample size, not method. Its spread is also markedly noisier than the baseline's
+(coefficient of variation 0.635 against 0.239), which is what widens the interval.
+
+**Consequence for the upstream comment (§19):** the mechanism claim is withheld. The draft
+leads with the m=30 instrumental confound on the reported ~52%, which is settled, and
+reports the regime-coverage spread as a measurement without asserting a cause. The
+elasticity test is offered as the diagnostic others can run, with the control numbers that
+show it works. Claiming a mechanism this test does not yet support would be the same error
+the instrument work in Part I exists to prevent.
+
 ## 8. Error growth with horizon
 
 | step | 1 | 5 | 10 | 20 | 30 |
@@ -522,6 +585,160 @@ running it at all, against the KL-budget argument:
 Full grid → bounded A4 pilot → negative-result write-up as the default deliverable.
 **The CandleCast (Phase B) decision is deferred until both land**, since a product built on
 a cone that a random walk produces more cheaply is not a product.
+
+---
+
+## 17b. Grid alignment defect — found 2026-08-06, before the full grid ran
+
+**One ticker is not on the same session index as the other 58, and it inflated the
+reported effective sample size by 83%.**
+
+`ITC` carries a bar on **2025-03-18** that no other ticker in the corpus has. It is the
+only ticker with 2095 sessions; 54 have 2094. `exchange_calendars` lists 2025-03-18 as an
+XBOM session, so either 58 tickers are missing a real day or ITC has one spurious bar —
+all 59 tickers came from the same source (yfinance), so this is not a dual-source artifact.
+
+The consequence is mechanical. Windows are enumerated per ticker at stride 30, so a
+one-row offset shifts every subsequent window ITC produces onto a date no other ticker
+uses. `block_ids` comes from `pd.factorize(start_date)`, so those dates become their own
+blocks:
+
+| | test split | 2024 calibration split |
+|---|---|---|
+| blocks reported in `results.json` | **22** | 15 |
+| blocks shared by the whole universe | **12** | **8** |
+| orphan blocks (all `ITC`) | 10 | 7 |
+
+Ten of the 22 "blocks" hold a **single window each**. Every block-bootstrap interval in
+the full-grid results resamples 22 groups as if they were 22 independent forecast dates
+when there are 12, and `effective_blocks: 22` — the headline sample-size number, and the
+input to every power calculation below — is wrong in the optimistic direction.
+
+`eval/diagnose.py:alignment_report` detects this, and `tests/test_diagnose.py` pins it.
+The detector was written because the defect was invisible: nothing errored, no schema
+check fired, and the number it corrupted was the one used to argue that the sample was
+adequate.
+
+> **Open decision (needs approval):** dropping ITC's orphan session realigns the grid and
+> restores 12/12 blocks, but it changes the corpus and therefore re-baselines the golden
+> numbers the Kaggle port check asserts (89.0381 / 67.2363 / 0.8369 / 22 blocks). That is
+> a cheap re-run, but it is a change to a committed measurement and is not made
+> unilaterally. **Every block count below uses the corrected value of 12.**
+
+## 17c. §17 amendment — the ±2pp criterion was mis-specified, not inconvenient
+
+The A5 acceptance criterion (§17) reads: conformalized 80% bands achieve 78–82% empirical
+coverage. Replacing it with *"the block-bootstrap interval covers the nominal level"* is
+mechanically a loosening, and would be a post-hoc rescue if it were adopted after seeing
+the grid. It is adopted here, before the grid runs, on the following calculation.
+
+Coverage is a mean over **independent forecast dates**, not windows. At `n` blocks and
+nominal `p = 0.8`, the standard error of empirical coverage is `√(p(1−p)/n)`:
+
+| blocks | what it is | SE | 95% CI width | P(pass ±2pp \| perfectly calibrated) |
+|---|---|---|---|---|
+| 8 | 2024 calibration year | 0.1414 | 0.554 | **11.2%** |
+| **12** | **2025–Jun 2026 test (corrected)** | **0.1155** | **0.453** | **13.8%** |
+| 22 | test, as previously reported | 0.0853 | 0.334 | 18.5% |
+| 182 | — | 0.0296 | 0.116 | 50.0% |
+| 657 | — | 0.0156 | 0.061 | 80.0% |
+
+**A forecaster that is exactly calibrated passes the original criterion 13.8% of the
+time.** The criterion is not a demanding bar; it is a coin weighted 6:1 against any model,
+including a correct one. Inverting it:
+
+| desired pass rate for a perfect forecaster | blocks required | ≈ years of daily test data |
+|---|---|---|
+| 50% | 182 | 22 |
+| 80% | 657 | **79** |
+| 95% | 1537 | 184 |
+
+At stride 30 on daily bars, the ±2pp criterion needs roughly **79 years** of held-out test
+data to be met four times in five by a forecaster that is already perfect. It was never
+attainable at any model quality on any corpus this project could assemble.
+
+> **Amendment, fixed 2026-08-06 before the grid:** A5 acceptance is assessed on whether
+> the **block-bootstrap 95% interval for empirical coverage contains the nominal level**,
+> reported jointly with the interval width and the block count. A point estimate near
+> nominal with an interval spanning 0.45 is not evidence of calibration and will not be
+> reported as such.
+
+This is a correction of record. The original criterion is retained above, unedited, so the
+change is visible rather than absorbed.
+
+## 17d. Pre-registered calibration/test split — and why split conformal cannot be used
+
+Choosing the conformal split after seeing the ensembles is the same pre-registration leak
+§17c closes. The rule is fixed here. Fixing it turned out to settle a larger question.
+
+Split conformal at level `1−α` needs `⌈(2−α)/α⌉` exchangeable calibration residuals — **9
+for an 80% band, 19 for 90%** — and needs the same again on the test side to measure
+whether the correction worked. Overlapping windows are not exchangeable; the unit is the
+forecast date. Enumerating every temporal split of the test period
+(`eval/diagnose.py:split_feasibility`):
+
+```
+no temporal split leaves both halves above the floor in every stratum
+   cal= 4 test=18   calm:4/18   mid:3/9   volatile:3/9
+   cal=10 test=12   calm:10/12  mid:6/6   volatile:6/6
+   cal=16 test= 6   calm:16/6   mid:9/3   volatile:9/3
+```
+
+With 12 shared blocks, 9 in calibration leaves 3 to test on; 9 to test on leaves 6 to
+calibrate. **18 distinct forecast dates are required and 12 exist.** The designated 2024
+calibration year (rule 7) supplies **8** — one short of being able to form an 80% band at
+all, before any test set is carved from it.
+
+> **Finding:** split-conformal Mondrian calibration at 80% is **structurally unevaluable**
+> at a 30-step horizon on this corpus. Not underpowered — infeasible. The 30-day horizon
+> consumes 30 sessions per independent observation, so a decade of daily data yields ~83
+> exchangeable points in total and ~28 per volatility stratum. This is a property of the
+> horizon and the calendar, not of the corpus size, and it applies to every daily-bar
+> conformal study at monthly horizons.
+
+The Mondrian numbers in §12 (marginal 0.809, regime spread 0.408) were computed on 30
+calibration and 15 test windows spanning 8 and 10 blocks. They are below the floor and are
+**withdrawn as measurements**; they are retained only as an illustration of what the
+feasibility ceiling looks like from underneath.
+
+> **Pre-registered design, fixed 2026-08-06:**
+> 1. **Calibration set:** the 2024 val split, all shared blocks, no subsampling. Never the
+>    test period — the test period is measured, not fitted.
+> 2. **Test set:** the full 2025–Jun 2026 grid, untouched.
+> 3. **Levels:** 50% bands carry the finite-sample guarantee (floor 3, have 8) and are the
+>    primary conformal claim. 80% is reported **without** the guarantee and explicitly
+>    labelled as such. 90% is not reported at all.
+> 4. **ACI is the primary serving method**, not split conformal. This is no longer a
+>    convenience choice: ACI's coverage guarantee is asymptotic in the number of update
+>    steps and requires neither exchangeability nor a minimum calibration set, which is
+>    the only guarantee available at this horizon. The serving-path decision in CLAUDE.md
+>    B1 is thereby **forced by the data geometry**, and that is the finding worth writing.
+> 5. **One grid run serves everything.** A3 verdict, conformal study and A5 all read the
+>    saved `ensembles.npz`. The split rule above is the only remaining researcher degree
+>    of freedom, and it is now closed.
+
+## 17e. A4 pass bar — parity, fixed before A4 starts
+
+§17a set A4's bar at beating random-walk-drift on fair CRPS. Against the decomposition in
+§6 — **87% of the coverage gap is per-window location error**, only 13% systematic drift —
+that bar pre-registers a likely second FAIL.
+
+Per-window directional error at a 30-day horizon on liquid large-caps is mostly
+irreducible; the random walk is hard to beat because the signal is faint, not because
+Kronos is badly tuned. Fine-tuning on 123,480 bars can plausibly fix the systematic
+component and whatever dispersion under-response survives the fuller test in §7a. It is
+unlikely to manufacture per-window directional skill.
+
+> **Amendment, fixed 2026-08-06 before any A4 run:** A4 **passes** on
+> **CRPS parity** with conformalized RW-drift — the block-bootstrap interval for the
+> paired CRPS difference containing zero — **together with** strictly better conditional
+> calibration, measured as a smaller regime spread at matched marginal coverage. A4
+> **fails** only if the fine-tune is worse than the null on CRPS, or fails to improve
+> conditional calibration.
+
+Parity plus better conditional calibration is a publishable, honest outcome: it says the
+foundation model buys calibration structure rather than accuracy. Beating the null on CRPS
+remains reported if it happens, as a stronger-than-expected result rather than the bar.
 
 ---
 
