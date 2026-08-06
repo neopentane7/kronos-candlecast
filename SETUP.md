@@ -98,7 +98,7 @@ Run these in order. Each is cheap and catches a different class of transfer erro
 
 ```bash
 # 1. environment + everything that needs no GPU
-uv run pytest -q                        # expect 139 passed (2 skip without CUDA)
+uv run pytest -q                        # expect 141 passed (2 skip without CUDA)
 
 # 2. corpus arrived intact — expect 59 tickers, 123,479 bars, 0 zero-volume,
 #    amount proxy error exactly 0.0

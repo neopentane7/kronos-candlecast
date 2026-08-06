@@ -189,6 +189,55 @@ def split_feasibility(npz, level: float = 0.8) -> dict:
     }
 
 
+def feasibility_horizon(npz, levels=(0.5, 0.8, 0.9), stride: int = 30) -> dict:
+    """How much data a split-conformal study needs, in years, at each nominal level.
+
+    "12 dates exist, 18 are required" invites the obvious rebuttal: lengthen the test
+    window. This converts the block count into the quantity that rebuttal has to argue
+    with -- calendar years of data consumed by the conformal split alone -- so the
+    infeasibility reads as a trade-off with a price attached rather than an accident of
+    how this particular split was drawn.
+
+    Sessions per year are measured from the grid rather than assumed: consecutive blocks
+    are ``stride`` sessions apart, so the calendar span between the first and last block
+    fixes the conversion.
+    """
+    blocks = _blocks(npz["block_ids"])
+    dates = npz["start_dates"]
+    order = _chronological_blocks(blocks, dates)
+    first = np.datetime64(sorted(dates[blocks == order[0]].tolist())[0])
+    last = np.datetime64(sorted(dates[blocks == order[-1]].tolist())[0])
+
+    n_blocks = len(order)
+    span_days = int((last - first).astype("timedelta64[D]").astype(int))
+    sessions_spanned = (n_blocks - 1) * stride
+    sessions_per_year = (
+        sessions_spanned / span_days * 365.25 if span_days and n_blocks > 1 else float("nan")
+    )
+
+    rows = {}
+    for lvl in levels:
+        floor = min_samples_for_band(round(1 - lvl, 10))
+        need_blocks = 2 * floor  # calibration side and test side
+        need_sessions = need_blocks * stride
+        rows[f"{int(lvl * 100)}"] = {
+            "floor_per_side": floor,
+            "blocks_needed": need_blocks,
+            "sessions_needed": need_sessions,
+            "years_needed": round(need_sessions / sessions_per_year, 2),
+            "feasible_here": bool(n_blocks >= need_blocks),
+        }
+
+    return {
+        "stride": stride,
+        "n_blocks_available": n_blocks,
+        "span_days": span_days,
+        "sessions_per_year": round(sessions_per_year, 1),
+        "years_available": round(span_days / 365.25, 2),
+        "levels": rows,
+    }
+
+
 def _realized_vol(prices: np.ndarray, lookback: int = VOL_LOOKBACK) -> np.ndarray:
     """Std of daily log returns over the trailing ``lookback`` days of each row."""
     tail = prices[:, -(lookback + 1) :]
@@ -366,6 +415,19 @@ def main() -> int:
             )
         )
 
+    horizon = feasibility_horizon(npz)
+    print(
+        f"\n=== data required for a split-conformal study "
+        f"(stride {horizon['stride']}, {horizon['sessions_per_year']} sessions/yr) ==="
+    )
+    print(f"available: {horizon['n_blocks_available']} blocks over {horizon['years_available']} yr")
+    print(f"{'level':>7}{'floor/side':>12}{'blocks':>9}{'sessions':>10}{'years':>8}{'here?':>8}")
+    for lvl, r in horizon["levels"].items():
+        print(
+            f"{lvl:>7}{r['floor_per_side']:>12}{r['blocks_needed']:>9}"
+            f"{r['sessions_needed']:>10}{r['years_needed']:>8}{str(r['feasible_here']):>8}"
+        )
+
     spread = spread_vs_input_vol(npz, lookback=args.lookback, seed=args.seed)
     print(f"\n=== h=1 predicted spread vs input realized vol ({args.lookback}d) ===")
     for name, m in spread["models"].items():
@@ -392,6 +454,7 @@ def main() -> int:
         "alignment": align,
         "blocks_per_stratum": strata,
         "split_feasibility_80": feas,
+        "feasibility_horizon": horizon,
         "spread_vs_input_vol": spread,
     }
     write_results(args.run_dir, payload, filename="diagnostics.json")

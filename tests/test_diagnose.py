@@ -20,6 +20,7 @@ from eval.diagnose import (  # noqa: E402
     _spearman,
     alignment_report,
     blocks_per_stratum,
+    feasibility_horizon,
     split_feasibility,
     spread_vs_input_vol,
 )
@@ -146,6 +147,60 @@ def test_split_feasibility_is_ordered_in_time():
     out = split_feasibility(g, level=0.5)
     assert [r["n_cal_blocks"] for r in out["splits"]] == [1, 2, 3]
     assert [r["n_test_blocks"] for r in out["splits"]] == [3, 2, 1]
+
+
+def test_feasibility_horizon_prices_the_obvious_rebuttal():
+    """ "Just use a longer test window" has a cost; this computes it.
+
+    A split-conformal study needs `floor` blocks to calibrate and `floor` to test, and a
+    block is `stride` sessions wide. The years that implies is the number the rebuttal has
+    to argue with.
+    """
+    # 12 blocks, 30 sessions apart, spanning ~1.34 years -- the real test split's shape.
+    # 30 sessions is roughly 41 calendar days once weekends and holidays are counted.
+    from datetime import date, timedelta
+
+    b, t, k, d = [], [], [], []
+    dates = [str(date(2025, 1, 1) + timedelta(days=41 * i)) for i in range(12)]
+    for i in range(12):
+        for j in range(3):
+            b.append(i)
+            t.append(j)
+            k.append(f"T{j}")
+            d.append(dates[i])
+    out = feasibility_horizon(Npz(make_npz(b, t, k, d)), stride=30)
+
+    assert out["n_blocks_available"] == 12
+    # 80%: floor 9 per side -> 18 blocks -> 540 sessions.
+    assert out["levels"]["80"]["blocks_needed"] == 18
+    assert out["levels"]["80"]["sessions_needed"] == 540
+    assert out["levels"]["80"]["feasible_here"] is False
+    # 90% costs more than twice as much again.
+    assert out["levels"]["90"]["sessions_needed"] == 1140
+    # 50% is affordable, which is why it is the level the study can actually claim.
+    assert out["levels"]["50"]["feasible_here"] is True
+    assert out["levels"]["50"]["years_needed"] < out["levels"]["80"]["years_needed"]
+
+
+def test_feasibility_horizon_scales_with_stride():
+    """Shortening the stride buys dates, not exchangeable ones -- but the cost still falls.
+
+    The test pins the mechanical relationship so the report's stride argument cannot be
+    quietly contradicted by the code: halving the stride halves the sessions required,
+    which is exactly why the exchangeability objection has to be made separately rather
+    than assumed away by the arithmetic.
+    """
+    b, t, k, d = [], [], [], []
+    for i in range(12):
+        for j in range(3):
+            b.append(i)
+            t.append(j)
+            k.append(f"T{j}")
+            d.append(f"2025-{i + 1:02d}-01")
+    g = Npz(make_npz(b, t, k, d))
+    wide = feasibility_horizon(g, stride=30)["levels"]["80"]["sessions_needed"]
+    narrow = feasibility_horizon(g, stride=15)["levels"]["80"]["sessions_needed"]
+    assert narrow * 2 == wide
 
 
 def test_elasticity_recovers_a_known_slope():

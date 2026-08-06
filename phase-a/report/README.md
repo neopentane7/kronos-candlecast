@@ -640,13 +640,32 @@ corporate-action history, which rewrites prices across the entire series rather 
 patching one date. They stay, and they are why the val split is still not perfectly
 aligned (below).
 
+### Why the universe outranks the calendar
+
+`exchange_calendars` has **no NSE calendar**; `XNSE` does not exist, so this project uses
+**`XBOM` — the BSE calendar — as a stand-in** (recorded in `common/calendar.py`, still
+unratified in CLAUDE.md). The two exchanges keep near-identical holiday lists but have
+diverged on rare dates, and the Diwali Muhurat special sessions are exactly the sort of
+one-off a neighbouring exchange's calendar models imperfectly. That is consistent with
+what the scan found: 7 dates where the whole universe trades and XBOM does not list a
+session, and 4 where XBOM lists one and no ticker has data.
+
+So the authority ordering used throughout — **majority-of-universe primary, XBOM
+advisory** — is not merely pragmatic. The corpus *is* NSE; the calendar is a different
+exchange's approximation of it. Where they disagree about whether NSE traded, 58
+unanimous NSE price series outrank a BSE holiday table. `exchange_calendars` remains
+authoritative for the one job it is actually being asked to do — enumerating **future**
+sessions for forecast timestamps (hard constraint 5) — where no price data exists to
+appeal to.
+
 **Which side is the defect on?** 2025-03-18 *is* an XBOM session, and ITC's bar for it is
 internally plausible — OHLC 410.00 / 411.95 / 407.75 / 409.10 on 13.9M shares, sitting
 smoothly between the 17th (close 407.95) and the 19th (open 410.00), not a duplicate of
-either. So the more likely reading is that **58 tickers have a hole on a valid session and
-ITC is the only correct one**, which is a yfinance reliability finding rather than a bad
-bar. XBOM already disagrees with the unanimous universe on three other dates, so this
-cannot be settled from the corpus alone. The action is the same either way — grid
+either. So one reading is that **58 tickers have a hole on a valid session and ITC is the
+only correct one**, which would be a yfinance reliability finding rather than a bad bar.
+Against that, XBOM is a BSE calendar (above) and already disagrees with the unanimous
+universe on three other dates, so its listing 2025-03-18 is weak evidence that NSE traded.
+This cannot be settled from the corpus alone. The action is the same either way — grid
 semantics are the intersection of dates, and a window cannot be forecast against a
 universe with no data there — but the changelog records it as *aligned to a majority gap
 on a valid session*, not *removed a bad bar*.
@@ -762,12 +781,51 @@ calibrate. **18 distinct forecast dates are required and 12 exist.** The designa
 calibration year (rule 7) supplies **8** — one short of being able to form an 80% band at
 all, before any test set is carved from it.
 
+### The count is not the argument — the price is
+
+"12 exist, 18 are needed" invites two rebuttals, and both have to be closed for this to be
+a finding rather than an artifact of how one split was drawn.
+
+**"So use a longer test window."** The 12 dates are a property of the split length at
+stride 30, not of the exchange. Converting the floor into data consumed
+(`eval/diagnose.py:feasibility_horizon`, measured at 245.5 sessions/year on this grid):
+
+| nominal | floor per side | blocks needed | sessions | **years of data** | available here |
+|---|---|---|---|---|---|
+| 50% | 3 | 6 | 180 | **0.73** | yes (12 blocks, 1.34 yr) |
+| 80% | 9 | 18 | 540 | **2.20** | no |
+| 90% | 19 | 38 | 1140 | **4.64** | no |
+
+An 80% band costs **2.2 years dedicated to the conformal split alone**; 90% costs **4.64
+years**, which is 55% of this 8.5-year corpus. Rule 7 already spends 2018–2023 on training.
+So the honest statement is not "we ran out of data" but:
+
+> Split-conformal calibration at 80% is feasible only under splits that either **starve
+> training** — taking 2.2 of 8.5 years for calibration and test — or **stretch calibration
+> across a span long enough that exchangeability, the one assumption split conformal
+> actually requires, is what is being sacrificed to obtain it.** At 90% the trade is
+> 4.64 years and the choice is not close.
+
+That is a trade-off with a price attached, and it holds for any daily-bar conformal study
+at monthly horizons on any exchange.
+
+**"So reduce the stride."** Stride below the horizon manufactures more forecast dates, and
+`feasibility_horizon` confirms the arithmetic obliges — halving the stride halves the
+sessions required (pinned in `tests/test_diagnose.py`). But windows closer together than
+the horizon **share outcome paths**: two forecasts 15 sessions apart are scored against 15
+of the same daily returns. They are more dates, not more exchangeable units, and split
+conformal's finite-sample guarantee is stated over exchangeable residuals.
+
+This is the same effective-sample-size argument as Part I, and it is worth noting that the
+project has already paid for learning it the hard way: §17b's orphan-block defect inflated
+the reported ESS by 83% precisely by counting non-independent observations as independent,
+and nothing errored. **A reader who accepts §1 and §17b has already accepted this.** The
+stride cannot be reduced for the same reason the orphan blocks could not be kept.
+
 > **Finding:** split-conformal Mondrian calibration at 80% is **structurally unevaluable**
-> at a 30-step horizon on this corpus. Not underpowered — infeasible. The 30-day horizon
-> consumes 30 sessions per independent observation, so a decade of daily data yields ~83
-> exchangeable points in total and ~28 per volatility stratum. This is a property of the
-> horizon and the calendar, not of the corpus size, and it applies to every daily-bar
-> conformal study at monthly horizons.
+> at a 30-step horizon on this corpus — not underpowered, infeasible — and the two
+> available escapes both cost more than they buy: lengthening the window trades training
+> data or exchangeability, and shortening the stride trades exchangeability outright.
 
 The Mondrian numbers in §12 (marginal 0.809, regime spread 0.408) were computed on 30
 calibration and 15 test windows spanning 8 and 10 blocks. They are below the floor and are
@@ -789,6 +847,24 @@ feasibility ceiling looks like from underneath.
 > 5. **One grid run serves everything.** A3 verdict, conformal study and A5 all read the
 >    saved `ensembles.npz`. The split rule above is the only remaining researcher degree
 >    of freedom, and it is now closed.
+
+### What the full grid does and does not confirm here
+
+Worth stating precisely, because it is easy to over-claim once the run comes back green.
+
+The **12-date count is an enumeration fact**. It follows from the corpus, the split
+boundaries and stride 30, and `alignment_report` establishes it without any model being
+run. The zero-shot grid does not test it and cannot strengthen it — a 708-window Kronos
+run would report 12 blocks for the same reason a baselines-only run does.
+
+What the grid *does* contribute is that `effective_blocks` lands on 12 **through the entire
+measurement path** — window construction, batching, resume, checkpoint reload, metric
+aggregation — rather than only in the offline enumerator. That is confirmation of the
+pipeline, not of the claim. Both are worth having; conflating them would let a green run
+be quoted as evidence for an argument it never touched.
+
+The infeasibility finding in §17d therefore stands or falls on the enumeration and the
+floor arithmetic, both of which are already committed and testable without a GPU.
 
 ## 17e. A4 pass bar — parity, fixed before A4 starts
 
