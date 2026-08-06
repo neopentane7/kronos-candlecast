@@ -7,6 +7,7 @@ what the harness actually produces.
 """
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -138,7 +139,9 @@ def test_harness_reproduces_the_golden_numbers(golden, tmp_path):
 
     Roughly a minute: baselines only, no model, no figures.
     """
-    before = {p.parent.name for p in (REPO / "results").glob("*/results.json")}
+    # Write into tmp_path rather than results/: the harness stamps a directory per run,
+    # and a test that ran on every commit would silt up the repo with runs nobody cites.
+    env = {**os.environ, "KRONOS_RESULTS_ROOT": str(tmp_path)}
     proc = subprocess.run(
         [
             sys.executable,
@@ -151,12 +154,13 @@ def test_harness_reproduces_the_golden_numbers(golden, tmp_path):
         cwd=REPO,
         capture_output=True,
         text=True,
+        env=env,
     )
     assert proc.returncode == 0, proc.stdout[-2000:] + proc.stderr[-2000:]
 
-    new = {p.parent.name for p in (REPO / "results").glob("*/results.json")} - before
-    assert len(new) == 1, f"expected one new run directory, got {new}"
-    res = json.loads((REPO / "results" / next(iter(new)) / "results.json").read_text())
+    runs = list(tmp_path.glob("*/results.json"))
+    assert len(runs) == 1, f"expected one run directory in {tmp_path}, got {runs}"
+    res = json.loads(runs[0].read_text(encoding="utf-8"))
 
     tol = golden["tolerances"]
     for name, want in golden["models"].items():

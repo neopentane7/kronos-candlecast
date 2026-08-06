@@ -7,13 +7,18 @@ figures, so any number in a report is traceable back to a commit.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-RESULTS_ROOT = REPO_ROOT / "results"
+
+# Overridable so the end-to-end test can run the real harness without depositing a run
+# directory in the repo on every invocation. Rule 9 is about real runs being traceable;
+# a test that reproduces golden numbers is not a measurement anyone will cite.
+RESULTS_ROOT = Path(os.environ.get("KRONOS_RESULTS_ROOT", REPO_ROOT / "results"))
 
 DISCLAIMER = "Research/education tool - scenario visualization, not investment advice."
 
