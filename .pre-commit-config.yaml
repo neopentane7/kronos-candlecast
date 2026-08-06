@@ -19,3 +19,14 @@ repos:
       - id: ruff
         args: [--fix]
       - id: ruff-format
+
+  # A PowerShell read/write round-trip has twice rewritten a Markdown file in the
+  # system codepage, mangling en-dashes into "a<euro>" sequences. Caught by eye both
+  # times, which is not a control.
+  - repo: local
+    hooks:
+      - id: check-encoding
+        name: utf-8 without BOM, and no double-encoding damage
+        entry: python phase-a/scripts/check_encoding.py
+        language: system
+        types: [text]

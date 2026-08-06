@@ -658,6 +658,14 @@ authoritative for the one job it is actually being asked to do — enumerating *
 sessions for forecast timestamps (hard constraint 5) — where no price data exists to
 appeal to.
 
+**This is a live defect in Phase B, not a historical curiosity.** All 7 off-calendar dates
+are Diwali Muhurat sessions, which recur annually and which XBOM has missed 7 times out of
+7. A nightly job that consults the calendar before fetching will therefore believe the
+market is closed on a day NSE trades, skip the fetch, and manufacture a universe-wide hole
+of exactly the kind §17b was written about. The ingest rule that prevents it —
+*off-calendar data is a logged calendar override, not an anomaly to drop* — is decided in
+[`pipeline/DESIGN.md`](../../pipeline/DESIGN.md) before B1 starts rather than next Diwali.
+
 **Which side is the defect on?** 2025-03-18 *is* an XBOM session, and ITC's bar for it is
 internally plausible — OHLC 410.00 / 411.95 / 407.75 / 409.10 on 13.9M shares, sitting
 smoothly between the 17th (close 407.95) and the 19th (open 410.00), not a duplicate of
@@ -826,6 +834,14 @@ stride cannot be reduced for the same reason the orphan blocks could not be kept
 > at a 30-step horizon on this corpus — not underpowered, infeasible — and the two
 > available escapes both cost more than they buy: lengthening the window trades training
 > data or exchangeability, and shortening the stride trades exchangeability outright.
+
+**The 50% row is a design fact, not a leftover.** It is the one nominal level the geometry
+affords, which gives Phase B a principled two-tier serving story: a 50% band that is
+honestly Mondrian-calibrated per regime, and 80/90% bands from ACI *because the geometry
+forbids the alternative*. That is recorded as a decision in
+[`pipeline/DESIGN.md`](../../pipeline/DESIGN.md) rather than left implicit — shipping
+stratified calibration at exactly the level the theorem permits is what shows the theorem
+is load-bearing rather than ornamental.
 
 The Mondrian numbers in §12 (marginal 0.809, regime spread 0.408) were computed on 30
 calibration and 15 test windows spanning 8 and 10 blocks. They are below the floor and are
