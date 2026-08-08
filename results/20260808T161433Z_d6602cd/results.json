@@ -1,0 +1,157 @@
+{
+  "git_sha": "9551026",
+  "disclaimer": "Research/education tool - scenario visualization, not investment advice.",
+  "run": "A3_zero_shot_gate",
+  "split": "test",
+  "rebuilt": true,
+  "rebuilt_from": "ensembles.npz",
+  "rebuilt_because": "the original results.json was overwritten by run_analysis.py, which called write_results without a filename",
+  "not_recoverable": [
+    "wall_clock (kronos_grid_seconds, seconds_per_window)",
+    "peak_vram_mb",
+    "sampling policy actually used (sample_count, top_p, temperature, seed)",
+    "sampling_policy_sweep, if the run performed one"
+  ],
+  "quantile_method": "weibull",
+  "crps_estimator": "fair",
+  "models": {
+    "kronos_zeroshot": {
+      "n_windows": 708,
+      "horizon": 30,
+      "n_samples": 30,
+      "effective_blocks": 12,
+      "point": {
+        "mae": 149.88957169962916,
+        "rmse": 386.51812059516703,
+        "mape": 0.07147454926653993
+      },
+      "crps": 121.86851978686063,
+      "crps_estimator": "fair",
+      "crps_naive": 123.16272061184863,
+      "quantile_method": "weibull",
+      "interval_score_80": 978.039520895753,
+      "pinball": 60.842003518401675,
+      "coverage": {
+        "50": {
+          "nominal": 0.5,
+          "empirical": 0.22857815442561205,
+          "ci95": [
+            0.20494350282485876,
+            0.2532991996233521
+          ],
+          "covers_nominal": false
+        },
+        "80": {
+          "nominal": 0.8,
+          "empirical": 0.41261770244821094,
+          "ci95": [
+            0.36986817325800375,
+            0.4557038606403013
+          ],
+          "covers_nominal": false
+        },
+        "90": {
+          "nominal": 0.9,
+          "empirical": 0.5318738229755179,
+          "ci95": [
+            0.4827648305084746,
+            0.5800388418079095
+          ],
+          "covers_nominal": false
+        }
+      }
+    },
+    "last_value": {
+      "n_windows": 708,
+      "horizon": 30,
+      "n_samples": 30,
+      "effective_blocks": 12,
+      "point": {
+        "mae": 89.04530246688822,
+        "rmse": 202.1145001214893,
+        "mape": 0.04301426228752387
+      },
+      "crps": 89.04530246688822,
+      "crps_estimator": "fair",
+      "crps_naive": 89.04530246688822,
+      "quantile_method": "weibull",
+      "interval_score_80": 890.4530246688824,
+      "pinball": 44.52265123344411,
+      "coverage": {
+        "50": {
+          "nominal": 0.5,
+          "empirical": 0.000847457627118644,
+          "ci95": [
+            0.00047080979284369113,
+            0.001224105461393597
+          ],
+          "covers_nominal": false
+        },
+        "80": {
+          "nominal": 0.8,
+          "empirical": 0.000847457627118644,
+          "ci95": [
+            0.00047080979284369113,
+            0.001224105461393597
+          ],
+          "covers_nominal": false
+        },
+        "90": {
+          "nominal": 0.9,
+          "empirical": 0.000847457627118644,
+          "ci95": [
+            0.00047080979284369113,
+            0.001224105461393597
+          ],
+          "covers_nominal": false
+        }
+      }
+    },
+    "random_walk_drift": {
+      "n_windows": 708,
+      "horizon": 30,
+      "n_samples": 30,
+      "effective_blocks": 12,
+      "point": {
+        "mae": 94.81441822980308,
+        "rmse": 212.464019996063,
+        "mape": 0.046242212550838595
+      },
+      "crps": 67.24145258528132,
+      "crps_estimator": "fair",
+      "crps_naive": 69.49630366975042,
+      "quantile_method": "weibull",
+      "interval_score_80": 462.8375262785407,
+      "pinball": 34.34802095947732,
+      "coverage": {
+        "50": {
+          "nominal": 0.5,
+          "empirical": 0.5653954802259887,
+          "ci95": [
+            0.5115725047080979,
+            0.6240595574387947
+          ],
+          "covers_nominal": false
+        },
+        "80": {
+          "nominal": 0.8,
+          "empirical": 0.8369585687382297,
+          "ci95": [
+            0.8002813088512241,
+            0.8760381355932203
+          ],
+          "covers_nominal": false
+        },
+        "90": {
+          "nominal": 0.9,
+          "empirical": 0.922316384180791,
+          "ci95": [
+            0.8946315913370998,
+            0.9493479284369114
+          ],
+          "covers_nominal": true
+        }
+      }
+    }
+  }
+}
