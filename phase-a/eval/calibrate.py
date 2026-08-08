@@ -34,6 +34,7 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "phase-a"))
 sys.path.insert(0, str(REPO_ROOT / "phase-a" / "Kronos"))
 
+from eval.analysis import spread_ratio_by_horizon  # noqa: E402
 from eval.baselines import build_baselines  # noqa: E402
 from eval.metrics import (  # noqa: E402
     CRPS_ESTIMATOR,
@@ -203,6 +204,98 @@ def kronos_ensemble(
     return full.transpose(0, 2, 1)  # -> (n, horizon, m)
 
 
+# Milestone A4. Every measurement to date was taken at T = 1.0. The diagnosed defect --
+# per-step token distributions mildly too concentrated, compounding through the
+# autoregressive loop into a 0.909 -> 0.481 spread-ratio collapse by h = 30 -- is exactly
+# what temperature scales. This axis asks whether sampling policy alone repairs it.
+TEMPERATURE_SWEEP = (1.0, 1.1, 1.3, 1.5)
+
+# Pre-registered 2026-08-09, before the run. At or above this at h = 30, the compression is
+# substantially a sampler artifact and the A6 pilot bar becomes "beat the reference on fair
+# CRPS". Below it, the compression is attributed provisionally to the tokenizer and
+# normalization, and becomes a documented limitation.
+SPREAD_RATIO_TARGET = 0.85
+
+
+def sweep_temperature(sampler, grid, args, run_dir):
+    """Score every temperature arm on one identical block-balanced panel.
+
+    T = 1.0 is re-run here rather than compared against the full-grid aggregate. Different
+    windows give a different level, so a sweep arm and a grid row are not comparable
+    quantities; the only honest comparison is arms against arms on the same windows.
+    """
+    panel = grid.subsample_by_block(args.sweep_size, seed=args.seed)
+    print(
+        f"\n=== temperature sweep on {len(panel)} windows "
+        f"({panel.meta['n_tickers']} tickers x {panel.meta['n_blocks']} blocks) ==="
+    )
+    print(f"    panel: {', '.join(panel.meta['panel_tickers'])}")
+
+    rows, ensembles = [], {}
+    for temperature in TEMPERATURE_SWEEP:
+        t0 = time.perf_counter()
+        ens = kronos_ensemble(
+            sampler,
+            panel,
+            args.sample_count,
+            PRODUCTION_TOP_P,
+            temperature,
+            args.seed,
+            args.batch_size,
+            run_dir=run_dir,
+            stage=f"sweep_T_{temperature}",
+            checkpoint_every=args.checkpoint_every,
+        )
+        ensembles[f"T_{temperature}"] = ens
+        s = summarize(panel.y_close, ens, panel.block_ids, seed=args.seed)
+        disp = spread_ratio_by_horizon(panel.y_close, ens, panel.history_close)
+        rows.append(
+            {
+                "temperature": temperature,
+                "crps_fair": s["crps"],
+                "crps_naive": s["crps_naive"],
+                "crps_ratio": s["crps_naive"] / s["crps"],
+                "interval_score_80": s["interval_score_80"],
+                "coverage_50": s["coverage"]["50"]["empirical"],
+                "coverage_80": s["coverage"]["80"]["empirical"],
+                "coverage_80_ci95": s["coverage"]["80"]["ci95"],
+                "coverage_90": s["coverage"]["90"]["empirical"],
+                "mape": s["point"]["mape"],
+                "spread_ratio_h1": disp["ratio_h1"],
+                "spread_ratio_h15": disp["ratio_hmid"],
+                "spread_ratio_h30": disp["ratio_hmax"],
+                "spread_ratio_by_step": disp["ratio_by_step"],
+                "wall_seconds": round(time.perf_counter() - t0, 1),
+            }
+        )
+        r = rows[-1]
+        print(
+            f"  T={temperature:<4} crps={r['crps_fair']:8.3f}  cov@80={r['coverage_80']:.4f}  "
+            f"spread h1/h30={r['spread_ratio_h1']:.3f}/{r['spread_ratio_h30']:.3f}"
+        )
+
+    # Pre-registered rule: best fair CRPS wins, coverage@80 breaks ties. Deliberately not
+    # the best spread ratio -- widening the cone with junk mass would win that and lose this.
+    best = min(rows, key=lambda r: (round(r["crps_fair"], 6), -r["coverage_80"]))
+    reached = [r for r in rows if r["spread_ratio_h30"] >= SPREAD_RATIO_TARGET]
+    baseline = next(r for r in rows if r["temperature"] == 1.0)
+
+    verdict = {
+        "reference_temperature": best["temperature"],
+        "reference_crps_fair": best["crps_fair"],
+        "spread_ratio_target": SPREAD_RATIO_TARGET,
+        "target_reached_by": [r["temperature"] for r in reached],
+        "branch": ("sampler_artifact" if reached else "tokenizer_limitation"),
+        "crps_change_vs_T1": best["crps_fair"] - baseline["crps_fair"],
+        "spread_h30_change_vs_T1": best["spread_ratio_h30"] - baseline["spread_ratio_h30"],
+        "tradeoff_present": bool(
+            max(r["spread_ratio_h30"] for r in rows) > baseline["spread_ratio_h30"]
+            and min(r["crps_fair"] for r in rows) >= baseline["crps_fair"]
+        ),
+    }
+    return rows, ensembles, panel, verdict
+
+
 def sweep_top_p(sampler, grid, args, run_dir, payload=None):
     """Quantify the nucleus-truncation mechanism on a stratified subsample.
 
@@ -347,6 +440,11 @@ def main() -> int:
     ap.add_argument("--batch-size", type=int, default=16)
     ap.add_argument("--seed", type=int, default=1234)
     ap.add_argument("--sweep-top-p", action="store_true")
+    ap.add_argument(
+        "--sweep-temperature",
+        action="store_true",
+        help="A4: temperature arms on a block-balanced panel; skips the full grid",
+    )
     ap.add_argument("--sweep-size", type=int, default=60)
     ap.add_argument("--skip-model", action="store_true", help="baselines only")
     ap.add_argument("--no-figures", action="store_true", help="skip figure rendering")
@@ -429,6 +527,74 @@ def main() -> int:
         },
         "models": {},
     }
+
+    if args.sweep_temperature:
+        # A4 runs the sweep alone. The full-grid model stage is 88 minutes and would
+        # measure nothing new; the baselines do not depend on temperature at all, so their
+        # full-grid numbers stand and no baseline arm belongs in this table.
+        from eval.sampler import KronosSampler
+        from model import Kronos, KronosTokenizer
+
+        print(f"\nloading {MODEL_ID} ...")
+        sampler = KronosSampler(
+            Kronos.from_pretrained(MODEL_ID),
+            KronosTokenizer.from_pretrained(TOKENIZER_ID),
+            max_context=512,
+        )
+        payload["run"] = "A4_temperature_sweep"
+        payload["config"]["device"] = str(sampler.device)
+        payload["config"]["top_p"] = PRODUCTION_TOP_P
+
+        rows, sweep_ens, panel, verdict = sweep_temperature(sampler, grid, args, run_dir)
+        payload["temperature_sweep"] = rows
+        payload["temperature_sweep_panel"] = panel.meta
+        payload["decision_rule"] = {
+            "fixed": "2026-08-09, before the run",
+            "reference_selected_by": "lowest fair CRPS; coverage@80 breaks ties",
+            "spread_ratio_target_at_hmax": SPREAD_RATIO_TARGET,
+            **verdict,
+        }
+        save_artifacts(run_dir, panel, sweep_ens, filename="ensembles_sweep.npz")
+        payload["artifacts"] = {"ensembles": "ensembles_sweep.npz"}
+
+        if not args.no_figures:
+            from eval.figures import spread_ratio_sweep
+
+            fig_path = spread_ratio_sweep(
+                rows,
+                run_dir / "spread_ratio_vs_temperature.png",
+                target=SPREAD_RATIO_TARGET,
+                subtitle=(
+                    f"{len(panel)} windows - {panel.meta['n_tickers']} tickers x "
+                    f"{panel.meta['n_blocks']} blocks - m={args.sample_count} - "
+                    f"top_p={PRODUCTION_TOP_P}"
+                ),
+            )
+            payload["artifacts"]["figures"] = [fig_path.name]
+            print(f"\nfigure: {fig_path.name}")
+
+        results_path = write_results(run_dir, payload)
+        print("\n--- temperature sweep ---")
+        print(
+            f"{'T':>5}{'CRPS fair':>11}{'CRPS naive':>12}{'IS@80':>10}{'cov@50':>8}"
+            f"{'cov@80':>8}{'cov@90':>8}{'MAPE':>8}{'h=1':>7}{'h=15':>7}{'h=30':>7}"
+        )
+        for r in rows:
+            mark = " *" if r["temperature"] == verdict["reference_temperature"] else "  "
+            print(
+                f"{r['temperature']:>5}{r['crps_fair']:>11.3f}{r['crps_naive']:>12.3f}"
+                f"{r['interval_score_80']:>10.2f}{r['coverage_50']:>8.4f}{r['coverage_80']:>8.4f}"
+                f"{r['coverage_90']:>8.4f}{r['mape']:>8.4f}{r['spread_ratio_h1']:>7.3f}"
+                f"{r['spread_ratio_h15']:>7.3f}{r['spread_ratio_h30']:>7.3f}{mark}"
+            )
+        print(f"\n* reference config: T = {verdict['reference_temperature']}")
+        print(
+            f"branch fired: {verdict['branch']} "
+            f"(target {SPREAD_RATIO_TARGET} reached by {verdict['target_reached_by'] or 'no arm'})"
+        )
+        print(f"results: {results_path}")
+        print(f"\n{DISCLAIMER}")
+        return 0
 
     print("\n=== baselines ===")
     ensembles: dict[str, np.ndarray] = {}

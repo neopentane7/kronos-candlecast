@@ -97,6 +97,51 @@ class EvalGrid:
         edges = np.quantile(self.atr_pct, [1 / 3, 2 / 3])
         return np.digitize(self.atr_pct, edges)
 
+    def subsample_by_block(self, per_block: int, seed: int = 0) -> EvalGrid:
+        """A balanced panel: the same ``per_block`` tickers at every forecast date.
+
+        ``subsample`` stratifies by volatility and lets date coverage fall where it may.
+        A sampling-policy sweep needs the opposite guarantee -- every arm scored on
+        *identical* windows, with all date blocks present so the horizon curve is not
+        dominated by one period.
+
+        Because the arms are compared against each other rather than against the full
+        grid, the panel does not have to be representative; it has to be identical across
+        arms and spread over time. That is also why a sweep must never be compared to
+        full-grid aggregates: different windows, different level.
+        """
+        names = sorted({t for t in self.tickers})
+        rng = np.random.default_rng(seed)
+        chosen = set(rng.choice(names, size=min(per_block, len(names)), replace=False).tolist())
+        picks = sorted(i for i, t in enumerate(self.tickers) if t in chosen)
+        if not picks:
+            raise ValueError("block-balanced subsample selected no windows")
+
+        blocks = {self.start_dates[i] for i in picks}
+        sub = EvalGrid(
+            features={k: v for k, v in self.features.items() if k in chosen},
+            timestamps={k: v for k, v in self.timestamps.items() if k in chosen},
+            tickers=[self.tickers[i] for i in picks],
+            offsets=[self.offsets[i] for i in picks],
+            start_dates=[self.start_dates[i] for i in picks],
+            y_close=self.y_close[picks],
+            history_close=self.history_close[picks],
+            atr_pct=self.atr_pct[picks],
+            lookback=self.lookback,
+            horizon=self.horizon,
+        )
+        sub.meta = {
+            **self.meta,
+            "subsampled_from": len(self),
+            "subsample_seed": seed,
+            "subsample_mode": "block_balanced",
+            "panel_tickers": sorted(chosen),
+            "n_windows": len(picks),
+            "n_tickers": len(chosen),
+            "n_blocks": len(blocks),
+        }
+        return sub
+
     def subsample(self, n: int, seed: int = 0) -> EvalGrid:
         """A smaller grid, stratified by volatility regime and spread over time."""
         if n >= len(self):

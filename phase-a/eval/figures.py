@@ -257,6 +257,53 @@ def horizon_curve(
     )
 
 
+def spread_ratio_sweep(
+    rows: list[dict],
+    out_path: Path,
+    target: float = 0.85,
+    subtitle: str = "",
+) -> Path:
+    """Spread ratio against horizon, one curve per temperature arm.
+
+    The pre-registered target is drawn on: reaching it at h = max means the horizon
+    compression is substantially a sampler artifact rather than a tokenizer limitation.
+    A ratio of 1.0 is a correctly sized cone.
+    """
+    fig, ax = plt.subplots(figsize=(6.8, 4.6))
+    for i, row in enumerate(rows):
+        ratios = row["spread_ratio_by_step"]
+        steps = np.arange(1, len(ratios) + 1)
+        label = f"T = {row['temperature']}  (CRPS {row['crps_fair']:.1f})"
+        ax.plot(steps, ratios, marker="o", ms=2.6, lw=1.6, color=_colour(label, i), label=label)
+
+    ax.axhline(1.0, color="#39525A", lw=1.0, ls="-", alpha=0.5)
+    ax.text(
+        len(steps), 1.005, "correctly sized", ha="right", va="bottom", fontsize=7.5, color="#39525A"
+    )
+    ax.axhline(target, color="#A6402E", lw=1.2, ls="--")
+    # Below the line and hard right: the curves start high on the left and fall to the
+    # right, so this is the one corner none of them passes through.
+    ax.text(
+        len(steps),
+        target - 0.015,
+        f"pre-registered target {target:.2f}",
+        ha="right",
+        va="top",
+        fontsize=7.5,
+        color="#A6402E",
+    )
+
+    ax.set_xlabel("horizon step")
+    ax.set_ylabel("predicted spread / realized spread")
+    ax.set_title("Does temperature repair horizon under-propagation?")
+    ax.set_ylim(0.0, max(1.08, max(max(r["spread_ratio_by_step"]) for r in rows) + 0.06))
+    ax.grid(alpha=0.25)
+    ax.legend(fontsize=8, frameon=False, loc="lower left")
+    return _finish(
+        fig, out_path, subtitle or "identical windows across arms; ratio 1.0 is correct width"
+    )
+
+
 def write_all(
     obs: np.ndarray,
     ensembles: dict[str, np.ndarray],

@@ -120,6 +120,30 @@ def z_ratio_table(obs: np.ndarray, ens: np.ndarray, levels=(0.50, 0.80, 0.90)) -
     }
 
 
+def spread_ratio_by_horizon(obs: np.ndarray, ens: np.ndarray, history: np.ndarray) -> dict:
+    """Predicted ensemble spread over realized spread, per horizon step.
+
+    Both are relative to the last observed close, so tickers at different price levels are
+    comparable. The realized figure is the cross-window standard deviation of the actual
+    relative move at that step.
+
+    A value of 1.0 means the cone is exactly as wide as the outcomes require. The zero-shot
+    model measures 0.909 at h=1 falling to 0.481 at h=30 (Fact of Record F2), which is the
+    curve a sampling-policy sweep is trying to lift.
+    """
+    last = history[:, -1]
+    pred_rel = ens.std(axis=-1) / last[:, None]
+    realized_rel = (obs / last[:, None] - 1.0).std(axis=0)
+    ratio = pred_rel.mean(axis=0) / realized_rel
+    h = len(ratio)
+    return {
+        "ratio_by_step": [float(v) for v in ratio],
+        "ratio_h1": float(ratio[0]),
+        "ratio_hmid": float(ratio[h // 2 - 1]),
+        "ratio_hmax": float(ratio[-1]),
+    }
+
+
 def _rank(x: np.ndarray) -> np.ndarray:
     """Average ranks, ties shared — Spearman without a scipy dependency."""
     order = np.argsort(x, kind="mergesort")
