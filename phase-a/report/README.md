@@ -233,8 +233,15 @@ informative than a corrected number quietly substituted.
 **Zero-shot Kronos-small is 81% worse than a Gaussian random walk on fair CRPS and 111%
 worse on interval score.** It is also worse than `last_value` — a flat line with no
 dispersion at all — by 37% and 10% respectively. Empirical coverage is 0.413 against a
-nominal 0.80, with a block-bootstrap interval 0.086 wide; the random walk's interval
-contains nominal at every level.
+nominal 0.80, with a block-bootstrap interval 0.086 wide.
+
+**The null is not well calibrated either, and this report should not imply otherwise.**
+RW-drift *over*-covers at 50% and 80% — its intervals sit entirely above nominal — and
+contains nominal only at 90%. It is conservative by 3.7pp at 80% where Kronos is deficient
+by 38.7pp, which is why it remains the correct null, but under the §17c acceptance rule the
+null also fails at two of three levels. The direction is diagnostic: a Gaussian fitted to
+400 sessions of fat-tailed returns is too wide through the bulk, which is what over-coverage
+at 50% and 80% looks like. Kronos misses in the opposite direction at every level.
 
 > **Rule A3 (pre-registered 2026-08-03) required losing to *conformalized* RW-drift on fair
 > CRPS and interval score. Kronos loses to the *raw* random walk by these margins, and
@@ -946,13 +953,18 @@ previously claimed, unreachable at any model quality.
 
 ### Why the amendment still holds
 
-The random walk is the illustration. Its coverage is **0.837** — 3.7pp above nominal, so it
-**fails** a ±2pp point-estimate test. Its interval is **[0.800, 0.876]**, which **contains**
-nominal at every level tested.
+Not because ±2pp is impossible — it is roughly 70% attainable — but because a point
+estimate discards the evidence about its own precision.
 
-A point-estimate rule discards the interval and calls a forecaster miscalibrated for
-landing 3.7pp high with 12 independent dates of evidence. That is the wrong inference, and
-it is the reason to judge on the interval — not because ±2pp is impossible.
+The random walk illustrates both halves. At 80% it measures **0.8370** with interval
+**[0.8003, 0.8760]**. It fails ±2pp, and it also fails *covers-nominal*, by 0.0003. At 90%
+it measures 0.9223 with interval [0.8946, 0.9493], which does contain nominal. So the two
+rules agree on RW-drift at 80% and disagree at 90% — and the interval rule is the one that
+carries the block count and the width alongside the verdict, which is what a reader needs to
+judge how much either verdict is worth.
+
+The amendment's value is that it makes the precision visible, not that it is more lenient.
+On this grid it is not more lenient: RW-drift fails it at two of three levels.
 
 > **Amendment, fixed 2026-08-06 before the grid:** A5 acceptance is assessed on whether
 > the **block-bootstrap 95% interval for empirical coverage contains the nominal level**,
