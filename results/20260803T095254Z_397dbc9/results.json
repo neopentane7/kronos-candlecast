@@ -1,134 +1,157 @@
 {
-  "git_sha": "397dbc9",
+  "git_sha": "d6602cd-dirty",
   "disclaimer": "Research/education tool - scenario visualization, not investment advice.",
-  "run": "A3_offline_analysis",
-  "source_run": "20260803T095254Z_397dbc9",
-  "n_windows": 45,
-  "recentering": {
-    "bias_per_step_first": 0.0005015550068813946,
-    "bias_per_step_last": 0.0032862431147844535,
-    "bias_per_step_mean": -0.01041493475498619,
-    "raw": {
-      "coverage": [
-        0.24,
-        0.4222222222222222,
-        0.5311111111111111
-      ],
-      "z_ratio": 0.4425286358434659,
-      "implied_scale": 2.259740769304083
+  "run": "A3_zero_shot_gate",
+  "split": "test",
+  "rebuilt": true,
+  "rebuilt_from": "ensembles.npz",
+  "rebuilt_because": "the original results.json was overwritten by run_analysis.py, which called write_results without a filename",
+  "not_recoverable": [
+    "wall_clock (kronos_grid_seconds, seconds_per_window)",
+    "peak_vram_mb",
+    "sampling policy actually used (sample_count, top_p, temperature, seed)",
+    "sampling_policy_sweep, if the run performed one"
+  ],
+  "quantile_method": "weibull",
+  "crps_estimator": "fair",
+  "models": {
+    "kronos_zeroshot": {
+      "n_windows": 45,
+      "horizon": 30,
+      "n_samples": 30,
+      "effective_blocks": 12,
+      "point": {
+        "mae": 85.18859370478877,
+        "rmse": 153.54375190591165,
+        "mape": 0.06918105734891124
+      },
+      "crps": 67.57402778989592,
+      "crps_estimator": "fair",
+      "crps_naive": 68.7229904937493,
+      "quantile_method": "weibull",
+      "interval_score_80": 536.0217095613834,
+      "pinball": 34.07948706688775,
+      "coverage": {
+        "50": {
+          "nominal": 0.5,
+          "empirical": 0.24,
+          "ci95": [
+            0.1578814769481844,
+            0.3291026300743281
+          ],
+          "covers_nominal": false
+        },
+        "80": {
+          "nominal": 0.8,
+          "empirical": 0.4222222222222222,
+          "ci95": [
+            0.3038457364341085,
+            0.5510797510493558
+          ],
+          "covers_nominal": false
+        },
+        "90": {
+          "nominal": 0.9,
+          "empirical": 0.5311111111111111,
+          "ci95": [
+            0.4038737667371388,
+            0.6623211532531607
+          ],
+          "covers_nominal": false
+        }
+      }
     },
-    "recentered": {
-      "coverage": [
-        0.2637037037037037,
-        0.45185185185185184,
-        0.5548148148148148
-      ],
-      "z_ratio": 0.47734689292007076,
-      "implied_scale": 2.0949125569514178
+    "last_value": {
+      "n_windows": 45,
+      "horizon": 30,
+      "n_samples": 30,
+      "effective_blocks": 12,
+      "point": {
+        "mae": 50.4371445662887,
+        "rmse": 85.43433648586091,
+        "mape": 0.03653519086559267
+      },
+      "crps": 50.4371445662887,
+      "crps_estimator": "fair",
+      "crps_naive": 50.4371445662887,
+      "quantile_method": "weibull",
+      "interval_score_80": 504.3714456628872,
+      "pinball": 25.21857228314435,
+      "coverage": {
+        "50": {
+          "nominal": 0.5,
+          "empirical": 0.0014814814814814814,
+          "ci95": [
+            0.0,
+            0.0035460992907801418
+          ],
+          "covers_nominal": false
+        },
+        "80": {
+          "nominal": 0.8,
+          "empirical": 0.0014814814814814814,
+          "ci95": [
+            0.0,
+            0.0035460992907801418
+          ],
+          "covers_nominal": false
+        },
+        "90": {
+          "nominal": 0.9,
+          "empirical": 0.0014814814814814814,
+          "ci95": [
+            0.0,
+            0.0035460992907801418
+          ],
+          "covers_nominal": false
+        }
+      }
     },
-    "share_of_gap_from_systematic_drift": 0.13084296100357307
-  },
-  "dispersion": {
-    "ratio_by_step": [
-      0.826865082903411,
-      0.8261875724385438,
-      0.7173034565010212,
-      0.6888302166189166,
-      0.7034243139186465,
-      0.7086022461855744,
-      0.7055309769087517,
-      0.7272998039969757,
-      0.7708416950435529,
-      0.8340728078234798,
-      0.7802354444218841,
-      0.8808085448111628,
-      0.8987278899055214,
-      0.9169402774943001,
-      0.9675727250186836,
-      0.9402779012458927,
-      0.8877920772815425,
-      0.8986576603944509,
-      0.8378603770573545,
-      0.8548288527841095,
-      0.7906456521411782,
-      0.7929929506996296,
-      0.7465974892125775,
-      0.6581953734064835,
-      0.6490180652280328,
-      0.6662791969570249,
-      0.6648110761907803,
-      0.6814852821229399,
-      0.6969286331409245,
-      0.7046770447293432
-    ],
-    "ratio_h1": 0.826865082903411,
-    "ratio_hmax": 0.7046770447293432,
-    "h1_ratio_by_regime": {
-      "calm": 1.175564338672817,
-      "mid": 0.8918269815367298,
-      "volatile": 0.7809164516031518
-    }
-  },
-  "conformal": {
-    "n_calibration_windows": 30,
-    "n_test_windows": 15,
-    "calibration_windows_per_stratum": [
-      11,
-      12,
-      7
-    ],
-    "arms": {
-      "raw_kronos": {
-        "marginal": 0.38,
-        "by_regime": {
-          "calm": 0.225,
-          "mid": 0.17777777777777778,
-          "volatile": 0.5333333333333333
-        },
-        "regime_spread": 0.3555555555555555,
-        "relative_width": 0.11163054454660414
+    "random_walk_drift": {
+      "n_windows": 45,
+      "horizon": 30,
+      "n_samples": 30,
+      "effective_blocks": 12,
+      "point": {
+        "mae": 59.834203725744175,
+        "rmse": 112.42088653751723,
+        "mape": 0.039881513914813885
       },
-      "marginal_conformal": {
-        "marginal": 0.7622222222222222,
-        "by_regime": {
-          "calm": 0.575,
-          "mid": 0.5777777777777777,
-          "volatile": 0.925
+      "crps": 39.92707048254249,
+      "crps_estimator": "fair",
+      "crps_naive": 41.71403802031215,
+      "quantile_method": "weibull",
+      "interval_score_80": 278.06479113967333,
+      "pinball": 20.750804115450826,
+      "coverage": {
+        "50": {
+          "nominal": 0.5,
+          "empirical": 0.6081481481481481,
+          "ci95": [
+            0.5237993920972644,
+            0.6884248188405796
+          ],
+          "covers_nominal": false
         },
-        "regime_spread": 0.3500000000000001,
-        "relative_width": 0.32823841860866765
-      },
-      "normalized_lookback_vol": {
-        "marginal": 0.66,
-        "by_regime": {
-          "calm": 0.5583333333333333,
-          "mid": 0.4222222222222222,
-          "volatile": 0.8
+        "80": {
+          "nominal": 0.8,
+          "empirical": 0.8807407407407407,
+          "ci95": [
+            0.8236962174940898,
+            0.9333333333333333
+          ],
+          "covers_nominal": false
         },
-        "regime_spread": 0.3777777777777778,
-        "relative_width": 0.20301085288753662
-      },
-      "mondrian": {
-        "marginal": 0.8088888888888889,
-        "by_regime": {
-          "calm": 0.6583333333333333,
-          "mid": 0.5666666666666667,
-          "volatile": 0.975
-        },
-        "regime_spread": 0.4083333333333333,
-        "relative_width": 0.5018406787387124
-      },
-      "conformalized_rw_drift": {
-        "marginal": 0.7311111111111112,
-        "by_regime": {
-          "calm": 0.725,
-          "mid": 0.6888888888888889,
-          "volatile": 0.75
-        },
-        "regime_spread": 0.061111111111111116,
-        "relative_width": 0.1430961788488173
+        "90": {
+          "nominal": 0.9,
+          "empirical": 0.9525925925925925,
+          "ci95": [
+            0.9108480620155038,
+            0.984624183006536
+          ],
+          "covers_nominal": false
+        }
       }
     }
-  },
-  "note": "written by run_analysis.py"
+  }
 }

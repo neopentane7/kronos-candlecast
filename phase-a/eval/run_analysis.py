@@ -181,9 +181,15 @@ def main() -> int:
         "dispersion": dispersion_by_horizon(obs, models["kronos_zeroshot"], history, terciles),
         "conformal": conformal_comparison(obs, models, history, terciles, blocks),
     }
-    path = write_results(args.run_dir, payload | {"note": "written by run_analysis.py"})
-    path = path.with_name("analysis.json")
-    path.write_text(__import__("json").dumps(payload, indent=2, default=str), encoding="utf-8")
+    # filename is not optional here. Without it write_results defaults to results.json
+    # and this offline pass silently destroys the measurement it was run to analyse --
+    # which is what happened to run 20260803T095254Z_397dbc9, whose grid metrics were
+    # replaced by an analysis payload and had to be rebuilt from ensembles.npz.
+    path = write_results(
+        args.run_dir,
+        payload | {"note": "written by run_analysis.py"},
+        filename="analysis.json",
+    )
 
     r, disp, cf = payload["recentering"], payload["dispersion"], payload["conformal"]
     print(
