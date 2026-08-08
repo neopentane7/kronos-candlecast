@@ -23,8 +23,21 @@ Every number is traceable to a committed run. Figures marked *preliminary* come 
 decisions they feed and are **not** the A3 acceptance artifact.
 
 Where an earlier conclusion has been overturned by later measurement, the correction is
-stated in place rather than silently applied. There are three such corrections, marked
-**CORRECTED**.
+stated in place rather than silently applied, with the superseded reasoning retained so the
+size of the error is visible.
+
+Six such corrections stand. Three came from the harness during development (§1, §2, §10).
+Three came from the full grid overturning the 45-window probe that preceded it:
+
+| section | claimed | measured on 708 windows |
+|---|---|---|
+| §7 | regime spread 0.291, "Kronos-specific in degree" | 0.117 — **identical to the random walk's 0.116** |
+| §7a | mechanism test underpowered, verdict withheld | **refuted**: ρ 0.3551 against a ceiling of 0.3552 |
+| §17c | ±2pp unattainable, "79 years of data" | SE is 6× smaller than assumed; ±2pp is ~70% attainable |
+
+The pattern is worth naming: **every preliminary finding that made Kronos look
+distinctively bad was an artifact of the small sample, and every one of them dissolved.**
+What survived is §8 — and it is sharper than anything the probe suggested.
 
 | Part | Question |
 |---|---|
@@ -199,48 +212,71 @@ never got a second look are the ones that were quietly wrong for longest.
 
 # Part II — Zero-shot results
 
-**Preliminary.** Test split, 45 windows subsampled from 708, 32 tickers, **12 distinct
-forecast start dates** (the bootstrap blocks). Kronos-small, lookback 400 → horizon 30,
-m = 30, T = 1.0, top_k = 0, top_p = 0.9. Weibull quantiles, fair CRPS. Cost 33.5 s/window,
-3349 MB peak VRAM at batch 8 × 30.
+**Final.** Full test grid: **708 windows, 59 tickers, 12 distinct forecast start dates**
+(the bootstrap blocks — see §17b for why 12 and not 22). Kronos-small, lookback 400 →
+horizon 30, m = 30, T = 1.0, top_k = 0, top_p = 0.9. Weibull quantiles, fair CRPS.
+Run `20260808T161433Z_d6602cd` on a Kaggle T4, batch 24, 5325 s for the model stage
+(7.5 s/window).
 
-## 5. Headline
+Sections marked **preliminary** below report the 45-window subsample that preceded it.
+They are retained where the full grid *overturned* them, because a reversal is more
+informative than a corrected number quietly substituted.
 
-| model | CRPS (fair) | MAPE | cov@50 | cov@80 | cov@90 |
-|---|---|---|---|---|---|
-| random_walk_drift | **39.93** | 0.0399 | 0.608 | **0.881** | 0.953 |
-| last_value | 50.44 | 0.0365 | 0.002 | 0.002 | 0.002 |
-| **kronos_zeroshot** | **67.57** | **0.0692** | **0.240** | **0.422** | **0.531** |
+## 5. Headline — A3 outcome: FAIL
 
-**Zero-shot Kronos is worse than a flat line on CRPS and worse than a Gaussian random walk
-on every metric.** MAPE 6.9% against 4.0%, so the point forecast is also worse — this is
-not only a calibration failure.
+| model | CRPS (fair) | cov@50 | cov@80 | 95% CI @80 | covers nominal | IS@80 |
+|---|---|---|---|---|---|---|
+| random_walk_drift | **67.24** | 0.565 | **0.837** | [0.800, 0.876] | **yes** | **462.84** |
+| last_value | 89.05 | 0.001 | 0.001 | [0.001, 0.001] | no | 890.45 |
+| **kronos_zeroshot** | **121.87** | **0.229** | **0.413** | [0.370, 0.456] | no | **978.04** |
+
+**Zero-shot Kronos-small is 81% worse than a Gaussian random walk on fair CRPS and 111%
+worse on interval score.** It is also worse than `last_value` — a flat line with no
+dispersion at all — by 37% and 10% respectively. Empirical coverage is 0.413 against a
+nominal 0.80, with a block-bootstrap interval 0.086 wide; the random walk's interval
+contains nominal at every level.
+
+> **Rule A3 (pre-registered 2026-08-03) required losing to *conformalized* RW-drift on fair
+> CRPS and interval score. Kronos loses to the *raw* random walk by these margins, and
+> conformalizing the null can only improve its interval score. The condition is met a
+> fortiori. Milestone A3 is recorded as a FAIL and the primary deliverable is the negative
+> result.**
+
+The finding is stable across sample size, which is the main reason to trust it: the
+45-window preliminary measured coverage 0.422 against 0.413 here, and a CRPS ratio to the
+null of 1.69 against 1.81. The scale of every metric moved when the window population
+changed; the ordering and the ratios did not.
 
 Verified as a real result, not a harness fault: the median forecast starts within **0.71%**
 of the last observed close, confirming the sampler and normalisation round-trip correctly.
-
-The naive/fair CRPS ratios independently corroborate under-dispersion: 1.045 for the random
-walk (against the 1.034 a calibrated m = 30 forecaster would show), 1.017 for Kronos (its
-spread term is shrunk), 1.000 for the degenerate baseline (no spread term to correct).
+Both baselines reproduced their golden values to four decimals on hardware that had never
+run them (§17b), and `effective_blocks` came through the full measurement path as 12.
 
 ## 6. Is the miscalibration shape or scale?
 
 This decides whether conformal calibration is the right instrument. A pure scale error
 gives a constant `z_achieved / z_nominal`; a wrong shape does not.
 
+Full grid, 708 windows:
+
 | nominal | achieved | z_nominal | z_achieved | ratio |
 |---|---|---|---|---|
-| 0.50 | 0.2400 | 0.6745 | 0.3055 | 0.4529 |
-| 0.80 | 0.4222 | 1.2816 | 0.5566 | 0.4343 |
-| 0.90 | 0.5311 | 1.6449 | 0.7243 | 0.4403 |
+| 0.50 | 0.2286 | 0.6745 | 0.2905 | 0.4307 |
+| 0.80 | 0.4126 | 1.2816 | 0.5426 | 0.4234 |
+| 0.90 | 0.5319 | 1.6449 | 0.7255 | 0.4411 |
 
-**Mean 0.4425, sd 0.0095, spread 0.0186.** The distribution is approximately the right
-shape and **uniformly too tight by 2.26×**. The random-walk control gives 1.27 / 1.22 /
-1.21 — near-constant, slightly over-wide, as a correctly-specified Gaussian forecaster
-should look.
+**Mean 0.4317, sd 0.0089, spread 0.0177, `monotone_increasing: False`.** The distribution
+is approximately the right shape and **uniformly too tight by 2.32×**. The random-walk
+control is near-constant and slightly over-wide, as a correctly-specified Gaussian
+forecaster should look.
 
-This is the most encouraging result in the run: a uniform per-horizon scale correction is
-exactly what split conformal produces.
+The preliminary run measured 0.4425 / 0.0186 / non-monotone on 45 windows. The full grid
+reproduces it at 0.4317 / 0.0177 / non-monotone. **This is the one conclusion in Part II
+that the 16× larger sample left unchanged** — everything else in §7 moved.
+
+That constancy is why the conformal layer was worth testing at all: a uniform per-horizon
+scale correction is exactly what split conformal produces. §12 reports what happened when
+it was.
 
 ### The test is one-sided — read it as rejection, not confirmation
 
@@ -254,43 +290,63 @@ bias-plus-scale mixture also reads flat:
 | pure bias 1.1, correct scale | 0.564 / 0.609 / 0.636 | 0.072 | excluded |
 
 The discriminating signature is **monotonicity** — location bias makes the ratio climb
-with nominal level. Our sequence (0.4529, 0.4343, 0.4403) is **non-monotone**, i.e. noise
-around a constant. Encouraging, but underpowered at 12 blocks. `z_ratio_table` returns a
-`monotone_increasing` flag; check it on the full grid.
+with nominal level. The sequence (0.4307, 0.4234, 0.4411) is **non-monotone**, i.e. noise
+around a constant, now measured on the full grid rather than a 45-window probe.
 
-## 7. Regime dependence
+## 7. Regime dependence — CORRECTED
+
+> **The preliminary conclusion in this section was wrong, and it was wrong in the direction
+> that made Kronos look distinctively bad.** Both the magnitude and the interpretation are
+> replaced below. The original is retained beneath so the size of the error is visible.
 
 Terciles by ATR over the **lookback**; coverage measured on the **following** 30 sessions.
+Full grid, 236 windows per stratum:
 
-| regime | n | CRPS | IS@80 | MAPE | cov@50 | cov@80 | cov@90 |
+| forecaster | regime | CRPS | IS@80 | MAPE | cov@50 | cov@80 | cov@90 |
 |---|---|---|---|---|---|---|---|
-| calm | 15 | 102.25 | 857.8 | 0.0735 | 0.122 | **0.260** | 0.356 |
-| mid | 15 | 68.89 | 545.0 | 0.0605 | 0.264 | 0.456 | 0.544 |
-| volatile | 15 | 31.58 | 205.3 | 0.0735 | 0.333 | **0.551** | 0.693 |
+| random_walk_drift | calm | 92.22 | 624.3 | 0.0434 | 0.501 | 0.787 | 0.889 |
+| random_walk_drift | mid | 72.05 | 506.3 | 0.0463 | 0.539 | 0.820 | 0.915 |
+| random_walk_drift | volatile | 37.45 | 257.9 | 0.0491 | 0.656 | 0.903 | 0.963 |
+| kronos_zeroshot | calm | 167.83 | 1382.2 | 0.0659 | 0.199 | 0.364 | 0.480 |
+| kronos_zeroshot | mid | 135.06 | 1077.3 | 0.0712 | 0.221 | 0.393 | 0.494 |
+| kronos_zeroshot | volatile | 62.72 | 474.6 | 0.0773 | 0.265 | 0.481 | 0.622 |
 
-**Coverage at nominal 80% spans 0.260 to 0.551 — 29 points.** Ignore the CRPS column when
-comparing regimes: it is in price units while MAPE is roughly flat, so its ordering
-reflects price level, not skill. Coverage is scale-free and the pattern is real.
+*(Ignore the CRPS column across regimes: it is in price units while MAPE is roughly flat,
+so its ordering reflects price level, not skill.)*
 
-**Mechanism.** Kronos normalises each window by its own statistics, so cone width is
-anchored to **trailing** volatility. Volatility mean-reverts. A calm lookback is therefore
-disproportionately followed by a relatively more volatile future, and a cone sized for the
-calm past under-covers. **The model extrapolates the recent past rather than anticipating
-regime change.**
-
-### Control: general mechanism, Kronos-specific magnitude
-
-The mechanism punishes **any** forecaster whose dispersion comes from the lookback,
-including our baseline. Same windows, same tercile cuts:
+### The regime effect is real, and it is not Kronos's
 
 | forecaster | calm | mid | volatile | calm − volatile |
 |---|---|---|---|---|
-| random_walk_drift | 0.853 | 0.887 | 0.902 | **−0.049** |
-| kronos_zeroshot | 0.260 | 0.456 | 0.551 | **−0.291** |
+| random_walk_drift | 0.787 | 0.820 | 0.903 | **−0.116** |
+| kronos_zeroshot | 0.364 | 0.393 | 0.481 | **−0.117** |
 
-Same sign, **16.8%** of the magnitude. General in kind, Kronos-specific in degree.
+**The two spreads are identical to three decimal places.** Both forecasters under-cover in
+calm regimes and over-cover in volatile ones by exactly the same amount. The pattern is a
+property of *any* forecaster whose dispersion is anchored to the trailing window —
+volatility mean-reverts, so a cone sized on a calm lookback meets a more volatile future —
+and Kronos exhibits it to precisely the degree the mechanism predicts, no more.
 
-## 7a. Testing the mechanism — the normalization hypothesis is not supported
+**What the preliminary run claimed:** calm 0.260 / mid 0.456 / volatile 0.551, a spread of
+**0.291** against the random walk's 0.049 — "same sign, 16.8% of the magnitude, general in
+kind but **Kronos-specific in degree**", and a mechanism paragraph asserting the model
+"extrapolates the recent past rather than anticipating regime change."
+
+**What 16× more data says:** the spreads are 0.117 and 0.116. There is no Kronos-specific
+degree. The 6× excess was noise across 15 windows per stratum.
+
+Two independent lines of evidence agree with the correction. §7a finds Kronos's dispersion
+tracks input volatility at ρ = 0.3551 against a volatility-persistence ceiling of 0.3552 —
+it responds to regime as well as regime is predictable. And the dispersion ratio at h = 1
+by regime is 0.858 / 0.897 / 0.975, i.e. mildly under-wide everywhere and *most accurate*
+in volatile conditions — the opposite of the preliminary's 1.176 / 0.892 / 0.781, which
+had it inverted.
+
+> **Consequence for the upstream contribution (§19):** the draft comment must not claim
+> regime blindness or lookback-anchored over-confidence as a Kronos defect. Neither
+> survives. What survives is §8's finding, which is Kronos-specific and much sharper.
+
+## 7a. Testing the mechanism — the normalization hypothesis is refuted
 
 §7 asserts a mechanism: per-window instance normalization anchors cone width to trailing
 volatility, so the model cannot see the regime. That is a hypothesis, and it makes a
@@ -321,50 +377,91 @@ response. On the full 708-window grid:
 The control recovers a slope indistinguishable from 1 with a CI of ±0.04. **The test has
 power when the effect is real.**
 
-**The Kronos result** (45-window grid — the full-grid Kronos row does not exist yet):
+**The Kronos result** — full grid, 708 windows:
 
-| series | lookback | ρ (rank) | β (elasticity) |
-|---|---|---|---|
-| kronos_zeroshot | 400d | 0.337 [0.024, 0.602] | 0.522 [−0.373, 1.222] |
-| persistence ceiling | 400d | 0.337 [−0.006, 0.606] | 0.555 [0.007, 0.972] |
-| kronos_zeroshot | 20d | 0.353 [−0.049, 0.631] | 0.499 [0.007, 0.921] |
-| persistence ceiling | 20d | 0.517 [0.169, 0.712] | 0.549 [0.276, 0.773] |
+| series | ρ (rank) | β (elasticity) |
+|---|---|---|
+| **kronos_zeroshot** | **0.3551 [0.282, 0.448]** | **0.628 [0.521, 0.730]** |
+| persistence ceiling | **0.3552 [0.254, 0.500]** | 0.601 [0.471, 0.730] |
 
-**Kronos's response to input volatility is statistically indistinguishable from the
-persistence ceiling on the same windows**, at both lookbacks and on both statistics. The
-point estimates do not support blindness; they are consistent with a model that tracks
-volatility about as well as volatility persistence allows.
+**Kronos and the ceiling agree to four decimal places on ρ, and their elasticity intervals
+almost entirely overlap.** The preliminary interval on β was [−0.373, 1.222] — wide enough
+to admit near-total blindness and full proportional response alike. It is now
+[0.521, 0.730], and it sits on top of the ceiling.
 
-> **Correction to §7.** The mechanism sentence — "the model cannot see the regime" —
-> overstates what is measured. Kronos *does* respond to input volatility. What §7 actually
-> establishes is that its response is insufficient to keep coverage flat across regimes,
-> which is compatible with mild under-response and does not require blindness.
+> **The normalization-blindness hypothesis is refuted.** Kronos's dispersion tracks the
+> input window's realized volatility as well as volatility persistence itself does. It is
+> not blind to regime, and it does not under-respond to regime. Whatever is wrong with this
+> forecaster, this is not it.
 
-**This does not yet settle it.** At 12 blocks the Kronos elasticity interval spans
-[−0.373, 1.222] — wide enough to admit near-total blindness and full proportional response
-alike. The same statistic is pinned to ±0.04 on the control at n=708, so the shortfall is
-sample size, not method. Its spread is also markedly noisier than the baseline's
-(coefficient of variation 0.635 against 0.239), which is what widens the interval.
+The test had the power to detect the effect had it existed: the same statistic pins the
+random-walk control to β = 1.011 [0.979, 1.050] on the same windows, an interval of
+±0.04 around exactly proportional response.
 
-**Consequence for the upstream comment (§19):** the mechanism claim is withheld. The draft
-leads with the m=30 instrumental confound on the reported ~52%, which is settled, and
-reports the regime-coverage spread as a measurement without asserting a cause. The
-elasticity test is offered as the diagnostic others can run, with the control numbers that
-show it works. Claiming a mechanism this test does not yet support would be the same error
-the instrument work in Part I exists to prevent.
+**Consequence for §7 and §19.** This is the second independent line of evidence — with the
+identical regime spreads in §7 — that regime handling is not where Kronos fails. The
+upstream comment must therefore lead with **§8's horizon under-propagation**, which is
+Kronos-specific, sharply measured, and mechanistically attributable to autoregressive
+sampling. The elasticity test is offered alongside as a diagnostic others can run on their
+own fine-tunes, with the control numbers that show it works.
 
-## 8. Error growth with horizon
+Had this been written up from the 45-window probe, the report would have asserted a
+mechanism that 16× more data flatly contradicts. That is the entire argument for the
+zero-shot gate being a full-grid measurement rather than a quick one.
+
+## 8. The actual defect: uncertainty is under-propagated across the horizon
+
+This is the Kronos-specific finding, and after §7's correction it is the only one.
+
+Full grid, per horizon step:
 
 | step | 1 | 5 | 10 | 20 | 30 |
 |---|---|---|---|---|---|
-| CRPS | 11.14 | 38.50 | 57.30 | 78.42 | 99.61 |
-| IS@80 | 79.0 | 304.7 | 426.5 | 634.8 | 822.6 |
+| CRPS | 31.79 | 75.84 | 115.47 | 144.34 | 159.76 |
+| IS@80 | 225.0 | 575.3 | 911.0 | 1167.1 | 1293.9 |
+| **cov@80** | **0.590** | 0.531 | 0.412 | 0.353 | **0.308** |
+| **predicted / realized spread** | **0.909** | 0.805 | 0.696 | 0.596 | **0.481** |
 
-**CRPS ∝ h^0.639** against the h^0.5 of pure diffusion (validated at 0.4983 on our own
-baseline, §3). The excess indicates **drift error compounding across steps** rather than
-variance merely widening — corroborated by per-window diagnostics where the model made
-large directional calls that missed (GODREJCP predicted +4.3% against −7.8% actual;
-ULTRACEMCO −7.6% against +0.6%).
+**One step ahead the cone is 91% of the width it should be. Thirty steps ahead it is 48%.**
+The model's uncertainty grows far too slowly with horizon — it stays confident about the
+distant future in a way no diffusion process does.
+
+That is a statement about the sampler, not about market conditions, and it is the kind of
+defect a foundation model can plausibly have: each autoregressive step conditions on its
+own previous draws, and if the token distribution is even mildly too concentrated at each
+step, the compounded path ensemble is dramatically too narrow by step 30.
+
+### Two defects, not one
+
+The last row separates them. If under-dispersion were the whole story, coverage would
+follow the width ratio. It does not:
+
+| step | width ratio | coverage a correctly-*centred* forecaster of that width would get | actual coverage | shortfall |
+|---|---|---|---|---|
+| 1 | 0.909 | ~0.756 | 0.590 | −0.166 |
+| 30 | 0.481 | ~0.462 | 0.308 | −0.154 |
+
+*(Middle column: `2Φ(1.2816 × ratio) − 1`, i.e. the coverage of an unbiased Gaussian scaled
+by the measured width ratio.)*
+
+So there are two distinct failures, and they behave differently:
+
+1. **Location error, roughly constant across horizon** — a ~0.16 coverage shortfall present
+   already at h = 1, where width is nearly correct. The cone is the right size and in the
+   wrong place.
+2. **Under-dispersion, compounding with horizon** — 0.909 → 0.481, which is what turns a
+   bad forecast at h = 1 into a useless one at h = 30.
+
+**Correction to an earlier framing.** Previous drafts of this report and its summaries said
+"87–90% of the gap is per-window location error", citing §9's re-centering decomposition.
+That decomposition measures only the *systematic* component of location error — a per-step
+average bias, 9.9% of the gap. The remaining 90% is **everything else**, which the table
+above now splits into idiosyncratic location error and under-dispersion. Attributing all of
+it to location was a misreading of what the statistic measures.
+
+The distinction matters for A4: under-dispersion is a scale property that training can
+plausibly learn, whereas per-window direction is close to irreducible at these horizons.
+See §17e.
 
 ## 9. Sampling-policy sweep
 
@@ -401,9 +498,68 @@ effect".*
 
 # Part III — Can calibration repair it?
 
+**Answer, on the full grid: no.** §12a is the result; §10–11 are the synthetic groundwork
+that preceded it and are retained because they explain what was expected and why.
+
+## 12a. Conformal on the real full grid — the null wins on every axis
+
+Run `20260808T161433Z_d6602cd`, nominal 80%, 708 windows.
+
+> **Exploratory, not the pre-registered analysis.** `run_analysis.py` fits on the earlier
+> half of the test period's blocks and evaluates on the later half. The rule pinned in
+> §17d requires calibrating on the **2024 val split** and never on the test period; that
+> requires a val-split grid which has not yet been run. These numbers are reported as an
+> ablation and are **not** the A5 result.
+
+| arm | marginal | spread | rel. width | calm | mid | volatile |
+|---|---|---|---|---|---|---|
+| raw_kronos | 0.355 | 0.022 | 0.0845 | 0.359 | 0.342 | 0.364 |
+| marginal_conformal | 0.662 | 0.055 | 0.2015 | 0.668 | 0.635 | 0.690 |
+| normalized_lookback_vol | 0.627 | 0.125 | 0.1725 | 0.578 | 0.621 | 0.703 |
+| mondrian | 0.681 | 0.164 | 0.2105 | 0.761 | 0.660 | **0.597** |
+| **conformalized_rw_drift** | **0.796** | 0.080 | **0.1464** | 0.753 | 0.813 | 0.832 |
+
+Three findings, in order of importance:
+
+**1. No Kronos arm reaches nominal.** The best is Mondrian at 0.681 — 12pp short — and it
+gets there with the widest bands in the table. The null lands at 0.796, essentially exact.
+
+**2. The null is also 30% sharper.** Conformalized RW-drift achieves nominal at relative
+width 0.146; Mondrian achieves 0.681 at 0.211. Since conformal gives both arms coverage by
+construction, sharpness at matched coverage is the only discriminating comparison
+available (§14) — and it is not close.
+
+**3. Mondrian is inverted.** Its coverage runs 0.761 / 0.660 / **0.597** from calm to
+volatile: it is *worst* in the volatile stratum, which is precisely where stratification
+was supposed to help. Its regime spread (0.164) is double the null's (0.080) and eight
+times its own raw input's (0.022). Under §16's rule — spread above 0.10 is reported as not
+calibrated — **Mondrian fails**, while achieving the highest marginal coverage of any
+Kronos arm. That is exactly the "technically true and substantively misleading" failure
+§16 exists to catch.
+
+### Why marginal conformal undershoots at all
+
+Split conformal attains nominal coverage *by construction* when calibration and test
+residuals are exchangeable. `marginal_conformal` had 354 calibration windows and needed
+only 9 — yet it lands at 0.662, **14pp short**.
+
+That gap is exchangeability failure across a temporal split, measured directly rather than
+argued. It is the mechanism §17d reasons about, and it is asymmetric: the same split leaves
+the random-walk null at 0.796. Kronos's residual distribution shifts across the test period
+far more than the random walk's does.
+
+---
+
+## Synthetic groundwork (retained)
+
 Tested on CPU before committing GPU time to A5, using a synthetic forecaster tuned to the
-measured pathology (marginal 0.456 vs 0.422; regimes 0.322/0.454/0.593 vs 0.260/0.456/0.551;
-z-ratio 0.482 vs 0.443).
+then-measured pathology (marginal 0.456 vs 0.422; regimes 0.322/0.454/0.593 vs
+0.260/0.456/0.551; z-ratio 0.482 vs 0.443).
+
+**Note:** those regime targets came from the 45-window probe and §7 has since corrected
+them — the real regime spread is 0.117, not 0.291. The synthetic study therefore modelled a
+sharper regime effect than exists, which is why Mondrian looked more promising here than it
+proved on real data.
 
 ## 10. Method comparison
 
@@ -762,46 +918,64 @@ pre-correction dataset is refused in the first seconds with an instruction to re
 rather than reproducing superseded numbers perfectly and failing the port check hours
 later in a way that looks like a harness bug.
 
-## 17c. §17 amendment — the ±2pp criterion was mis-specified, not inconvenient
+## 17c. §17 amendment — judge the interval, not the point estimate
 
 The A5 acceptance criterion (§17) reads: conformalized 80% bands achieve 78–82% empirical
 coverage. Replacing it with *"the block-bootstrap interval covers the nominal level"* is
 mechanically a loosening, and would be a post-hoc rescue if it were adopted after seeing
 the grid. It is adopted here, before the grid runs, on the following calculation.
 
-Coverage is a mean over **independent forecast dates**, not windows. At `n` blocks and
-nominal `p = 0.8`, the standard error of empirical coverage is `√(p(1−p)/n)`:
+> **This section's original arithmetic was wrong by a factor of six, and the full grid
+> measured it.** The amendment stands; the argument for it is replaced. The superseded
+> reasoning is kept at the end so the error is visible.
 
-| blocks | what it is | SE | 95% CI width | P(pass ±2pp \| perfectly calibrated) |
+Coverage is a mean over **independent forecast dates**, not windows — so the question is
+how much the *block-level* coverage varies. That is measurable, and the full grid measures
+it directly:
+
+| forecaster | cov@80 | block-bootstrap 95% CI | half-width | implied SE |
 |---|---|---|---|---|
-| 8 | 2024 calibration year | 0.1414 | 0.554 | **11.2%** |
-| **12** | **2025–Jun 2026 test (corrected)** | **0.1155** | **0.453** | **13.8%** |
-| 22 | test, as previously reported | 0.0853 | 0.334 | 18.5% |
-| 182 | — | 0.0296 | 0.116 | 50.0% |
-| 657 | — | 0.0156 | 0.061 | 80.0% |
+| random_walk_drift | 0.8370 | [0.8003, 0.8760] | 0.0379 | **0.0193** |
+| kronos_zeroshot | 0.4126 | [0.3699, 0.4557] | 0.0429 | 0.0219 |
 
-**A forecaster that is exactly calibrated passes the original criterion 13.8% of the
-time.** The criterion is not a demanding bar; it is a coin weighted 6:1 against any model,
-including a correct one. Inverting it:
+At 12 blocks the standard error on empirical coverage is about **0.019**, so a
+perfectly calibrated forecaster lands within ±2pp of nominal roughly **70%** of the time.
 
-| desired pass rate for a perfect forecaster | blocks required | ≈ years of daily test data |
-|---|---|---|
-| 50% | 182 | 22 |
-| 80% | 657 | **79** |
-| 95% | 1537 | 184 |
+**The original ±2pp criterion was demanding but attainable.** It was not, as this section
+previously claimed, unreachable at any model quality.
 
-At stride 30 on daily bars, the ±2pp criterion needs roughly **79 years** of held-out test
-data to be met four times in five by a forecaster that is already perfect. It was never
-attainable at any model quality on any corpus this project could assemble.
+### Why the amendment still holds
+
+The random walk is the illustration. Its coverage is **0.837** — 3.7pp above nominal, so it
+**fails** a ±2pp point-estimate test. Its interval is **[0.800, 0.876]**, which **contains**
+nominal at every level tested.
+
+A point-estimate rule discards the interval and calls a forecaster miscalibrated for
+landing 3.7pp high with 12 independent dates of evidence. That is the wrong inference, and
+it is the reason to judge on the interval — not because ±2pp is impossible.
 
 > **Amendment, fixed 2026-08-06 before the grid:** A5 acceptance is assessed on whether
 > the **block-bootstrap 95% interval for empirical coverage contains the nominal level**,
-> reported jointly with the interval width and the block count. A point estimate near
-> nominal with an interval spanning 0.45 is not evidence of calibration and will not be
-> reported as such.
+> reported jointly with the interval width and the block count. `covers_nominal` is emitted
+> for every level in every run. A point estimate near nominal with a very wide interval is
+> not evidence of calibration and will not be reported as such.
 
-This is a correction of record. The original criterion is retained above, unedited, so the
-change is visible rather than absorbed.
+### Superseded reasoning — retained
+
+The section originally computed the standard error as `√(p(1−p)/n_blocks)` = 0.1155 at 12
+blocks, giving a 95% half-width of ±0.226 and a pass probability of **13.8%**, and inverted
+that to claim the criterion needed **~79 years** of daily test data to be met four times in
+five.
+
+That formula treats each block as contributing a single Bernoulli trial — maximal
+within-block dependence. Each block actually holds 59 tickers × 30 horizon steps, and
+coverage varies far less between blocks than that assumption permits. The measured
+half-width is ±0.038 against the predicted ±0.226: the formula was an upper bound on the
+uncertainty, mistaken for an estimate of it. **The "79 years" figure does not survive and
+must not be cited.**
+
+The A3 verdict is untouched by this: Kronos misses nominal by 0.39 with an interval 0.086
+wide, which no plausible standard error rescues.
 
 ## 17d. Pre-registered calibration/test split — and why split conformal cannot be used
 
@@ -938,9 +1112,37 @@ unlikely to manufacture per-window directional skill.
 > **fails** only if the fine-tune is worse than the null on CRPS, or fails to improve
 > conditional calibration.
 
-Parity plus better conditional calibration is a publishable, honest outcome: it says the
-foundation model buys calibration structure rather than accuracy. Beating the null on CRPS
-remains reported if it happens, as a stronger-than-expected result rather than the bar.
+### 17e-bis. The conditional-calibration leg is now vacuous — revised 2026-08-09
+
+The amendment above was written when the regime spread looked like **0.291** and Mondrian's
+like **0.408**. §7's correction puts Kronos's raw spread at **0.117**, identical to the
+random walk's **0.116**. There is essentially nothing left for a fine-tune to improve on
+that axis, and a criterion that is satisfied by doing nothing is not a criterion.
+
+Meanwhile §8 identified a defect that *is* Kronos-specific, *is* large, and *is* the kind of
+thing training can act on: the predicted/realized spread ratio falls from **0.909** at
+h = 1 to **0.481** at h = 30. Uncertainty is under-propagated across the horizon.
+
+> **Revised A4 bar, fixed 2026-08-09 before any A4 run.** A4 **passes** on both:
+> 1. **CRPS parity** with conformalized RW-drift — the paired block-bootstrap interval for
+>    the difference contains zero; and
+> 2. **the horizon dispersion ratio at h = 30 rises materially above 0.481**, with the
+>    ratio curve flattening rather than merely shifting.
+>
+> A4 **fails** if the fine-tune is worse than the null on CRPS, or leaves the h = 30
+> dispersion ratio unmoved.
+>
+> Regime spread is still **reported** at every A4 evaluation, but it is no longer a pass
+> condition, because the zero-shot model is already at the null's level on it.
+
+This substitution is a change to a pre-registered criterion and is recorded, dated, and
+justified by measurement rather than by preference — the same treatment §17c received. The
+original wording is retained above.
+
+Parity plus a repaired dispersion curve is a publishable, honest outcome: it would say
+fine-tuning teaches the model how uncertainty should compound, without buying directional
+accuracy. Beating the null on CRPS remains reported if it happens, as a
+stronger-than-expected result rather than the bar.
 
 ---
 
