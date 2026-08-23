@@ -552,6 +552,25 @@ more spread than `T = 1.5` already produces, which would put the one-step cone a
 **134% too wide** — to repair the thirty-step one. There is no temperature that fixes the far
 end without destroying the near end, because the near end was never broken.
 
+### How much of the horizon each arm actually covers
+
+The h = 30 summary understates it. Asking instead how far out each arm keeps the cone within
+15% of the width it needs:
+
+| T | h = 1 | adequate through | share of the horizon | CRPS cost |
+|---|---|---|---|---|
+| 1.0 | 1.030 | h = 5 | 17% | — |
+| 1.1 | 1.107 | h = 6 | 20% | +1.4% |
+| 1.3 | 1.326 | h = 7 | 23% | +5.1% |
+| 1.5 | **1.567** | h = 11 | **37%** | **+10.4%** |
+
+Quadrupling the departure from correct sizing at h = 1 — 1.030 to 1.567 — buys **six extra
+usable steps out of thirty**. The forecast is still structurally over-confident across the
+last two-thirds of its own horizon, and the reader has paid 10.4% of CRPS and a one-step
+cone 57% too wide for it.
+
+![Spread ratio against horizon for four temperature arms](../../results/20260823T045303Z_f91e4a4/spread_ratio_vs_temperature.png)
+
 ### What this hands to A6
 
 The pilot bar in §17e-bis requires the h = 30 ratio to rise "with the curve **flattening**,
