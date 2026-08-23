@@ -501,6 +501,70 @@ runs once rather than twice.
 *Caveat: 15 windows over 12 blocks. The claim is "not the dominant mechanism", not "no
 effect".*
 
+## 9a. Temperature sweep (milestone A4) — the cheap fix does not work
+
+`§8` diagnosed under-dispersion compounding with horizon. Temperature is the one knob that
+widens a sampled ensemble with **no training at all**, so it was tested before any GPU-days
+went into fine-tuning. Run `20260823T045303Z_f91e4a4`, Kaggle T4, ~30 minutes.
+
+**Panel:** 60 windows — BHARTIARTL, HAVELLS, TECHM, TITAN, WIPRO at all 12 forecast dates.
+Block-balanced and identical across arms. `T = 1.0` is **re-run here**, not carried over
+from the full grid: different windows give a different level, so a sweep arm and a grid row
+are not comparable quantities.
+
+| T | CRPS (fair) | CRPS (naive) | IS@80 | cov@50 | cov@80 | cov@90 | MAPE | h=1 | h=15 | h=30 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **1.0** | **104.63** | 105.66 | **851.7** | 0.2367 | 0.4000 | 0.4972 | **0.0697** | 1.030 | 0.498 | 0.419 |
+| 1.1 | 106.11 | 107.22 | 852.4 | 0.2372 | 0.4239 | 0.5178 | 0.0713 | 1.107 | 0.539 | 0.446 |
+| 1.3 | 110.01 | 111.27 | 870.5 | 0.2750 | 0.4594 | 0.5533 | 0.0739 | 1.326 | 0.636 | 0.501 |
+| 1.5 | 115.53 | 116.98 | 905.2 | 0.2989 | 0.4978 | 0.5878 | 0.0779 | 1.567 | 0.715 | 0.569 |
+
+> **Outcome of the pre-registered rule: no arm reached the 0.85 target at h = 30, so the
+> horizon compression is attributed to the tokenizer and normalization rather than to the
+> sampler, and `T = 1.0` remains the zero-shot reference config.**
+
+### The tradeoff, shown rather than averaged away
+
+Every arm above `T = 1.0` buys coverage and pays for it in score, monotonically:
+
+| T | coverage gained | CRPS paid | exchange rate |
+|---|---|---|---|
+| 1.1 | +2.4 pp | +1.4% | 0.6% CRPS per coverage point |
+| 1.3 | +5.9 pp | +5.1% | 0.9% |
+| 1.5 | +9.8 pp | +10.4% | **1.1%** |
+
+This is the failure mode `top_p = 1.0` already showed in §9, and the rate **worsens** as the
+cone widens — mass is being spread into the tails where the outcome is not. Proper scoring
+rules penalise exactly that, which is why the reference is decided on CRPS and not on the
+metric the intervention was designed to move.
+
+### Why temperature cannot work, in one number
+
+**At `T = 1.0` the one-step cone is already correctly sized: h = 1 measures 1.030.** The
+error is not that the cone is too narrow everywhere; it is that the cone stops growing.
+
+Temperature applies a roughly uniform multiplier, so it **shifts the curve without
+flattening it**. The h30/h1 ratio across arms is 0.407 / 0.403 / 0.378 / **0.363** — flat,
+and if anything drifting the wrong way.
+
+Extrapolating from the widest arm: reaching the 0.85 target at h = 30 needs about **1.49×**
+more spread than `T = 1.5` already produces, which would put the one-step cone at **2.34** —
+**134% too wide** — to repair the thirty-step one. There is no temperature that fixes the far
+end without destroying the near end, because the near end was never broken.
+
+### What this hands to A6
+
+The pilot bar in §17e-bis requires the h = 30 ratio to rise "with the curve **flattening**,
+not merely shifting." A4 supplies the measured example of *merely shifting*: a 52% increase
+in h = 30 spread (0.419 → 0.569) that leaves h30/h1 unchanged and costs 10.4% of CRPS.
+Fine-tuning has to beat that shape, not just that number.
+
+*Caveat: five tickers. The realized-spread denominator is estimated across 60 correlated
+windows, so the absolute level differs from the full grid (h = 1 reads 1.030 here against
+0.909 on 708 windows). The denominator is identical across arms, so the comparison between
+them — which is the entire purpose of the sweep — is unaffected.*
+
+
 ---
 
 # Part III — Can calibration repair it?
