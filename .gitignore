@@ -17,7 +17,9 @@ phase-a/Kronos/
 kronos-nse-corpus.zip
 
 # Market data + model artifacts are not committed; only manifests and results are.
-data/
+# Root-anchored on purpose: an unanchored `data/` also matches site/data, which is
+# the PWA's committed forecasts and must ship.
+/data/
 checkpoints/
 wandb/
 *.pth

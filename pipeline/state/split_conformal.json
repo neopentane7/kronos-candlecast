@@ -1,0 +1,34 @@
+{
+  "level": 0.5,
+  "scale_50": 1.0068304016545477,
+  "n_calibration_dates": 17,
+  "n_tickers": 59,
+  "n_pooled_residuals": 15930,
+  "pooled_scale_for_comparison": 1.0156267925569773,
+  "dates": [
+    "2024-01-01",
+    "2024-02-14",
+    "2024-02-15",
+    "2024-04-01",
+    "2024-04-02",
+    "2024-05-16",
+    "2024-05-17",
+    "2024-07-01",
+    "2024-07-02",
+    "2024-08-13",
+    "2024-08-14",
+    "2024-09-25",
+    "2024-09-26",
+    "2024-11-07",
+    "2024-11-08",
+    "2024-12-23",
+    "2024-12-24"
+  ],
+  "split": [
+    "2024-01-01",
+    "2024-12-31"
+  ],
+  "engine": "rw_drift",
+  "quantile_method": "weibull",
+  "note": "Finite-sample split conformal over forecast dates, which is the exchangeable unit: tickers share a market within a date and steps share a path within a forecast, so the ~16k pooled residuals are not 16k independent points. 50% is the only level this geometry supports (report section 17d); 80% and 90% are served by ACI."
+}

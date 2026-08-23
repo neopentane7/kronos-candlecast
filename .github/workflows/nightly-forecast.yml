@@ -1,0 +1,70 @@
+name: Nightly forecast
+
+# 13:00 UTC = 18:30 IST, an hour after the NSE close, which leaves margin for the data
+# vendor to settle. Cron on GitHub is best-effort and can drift by several minutes under
+# load; the job is idempotent, so a late or repeated run is harmless.
+on:
+  schedule:
+    - cron: "0 13 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run the job but do not commit the result"
+        type: boolean
+        default: false
+
+concurrency:
+  # A manual run racing the cron would have two jobs committing to the same branch.
+  group: nightly-forecast
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  forecast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      # The served engine is analytic: a Gaussian random walk fitted on the lookback.
+      # There is no model to download and nothing to run on a GPU, so torch -- a ~2.5GB
+      # CUDA wheel -- is excluded. tests/test_engines.py asserts the serving path imports
+      # no torch, so this exclusion cannot rot silently.
+      - name: Sync dependencies (without torch)
+        run: uv sync --all-groups --no-install-package torch
+
+      - name: Forecast
+        run: uv run python pipeline/run_nightly.py
+
+      - name: Validate every emitted contract
+        run: uv run pytest tests/test_pipeline.py -q
+
+      - name: Show the run summary
+        run: cat site/data/run_summary.json
+
+      - name: Commit forecasts, archive and calibration state
+        if: ${{ !inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data pipeline/archive_data pipeline/state/aci_state.json
+          if git diff --cached --quiet; then
+            echo "nothing changed -- a same-day re-run replaces the partition in place"
+            exit 0
+          fi
+          git commit -m "data: forecasts for $(date -u +%Y-%m-%d)
+
+          Emitted by the nightly job. ACI state is data and is committed with the
+          forecasts it produced, so a rollback restores both together."
+          # Rebase rather than force: another job may have landed while this one ran.
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

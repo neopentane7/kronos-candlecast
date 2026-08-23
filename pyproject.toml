@@ -21,6 +21,9 @@ dependencies = [
     "pyarrow>=16",
     "exchange-calendars>=4.5",
     "pandera>=0.20",
+    # Contract v3 validation for the serving path. Present transitively already, but
+    # the pipeline imports it directly, so it is declared directly.
+    "pydantic>=2.7",
     # --- eval / calibration ---
     "scoringrules>=0.7",
     "mapie>=0.9",
