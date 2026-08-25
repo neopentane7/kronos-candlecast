@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-25T08:33:26+00:00",
+  "generated_at": "2026-08-25T08:37:06+00:00",
   "forecast_date": "2026-08-25",
   "mode": "live",
   "backfilled": false,
@@ -16,5 +16,5 @@
     "tickers": 0
   },
   "split_conformal_50": 1.0068304016545477,
-  "wall_seconds": 17.1
+  "wall_seconds": 17.4
 }
