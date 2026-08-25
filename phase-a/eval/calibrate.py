@@ -78,6 +78,35 @@ TOP_P_SWEEP = (0.9, 0.99, 1.0)
 PRODUCTION_TOP_P = 0.9
 
 
+def load_kronos(checkpoint):
+    """The pretrained model, or an A6 checkpoint loaded into it.
+
+    Returns ``(model, label)``. The label becomes the model name in results.json, so a
+    G4 comparison cannot silently score pretrained weights while claiming to score a
+    fine-tune: the row is called kronos_finetuned, or it is not the fine-tune.
+    """
+    import torch
+    from model import Kronos
+
+    model = Kronos.from_pretrained(MODEL_ID)
+    if checkpoint is None:
+        return model, "kronos_zeroshot"
+
+    if not checkpoint.exists():
+        raise SystemExit(f"no checkpoint at {checkpoint}")
+    blob = torch.load(checkpoint, map_location="cpu", weights_only=False)
+    state = blob.get("model", blob)
+    missing, unexpected = model.load_state_dict(state, strict=False)
+    if missing or unexpected:
+        raise SystemExit(
+            f"checkpoint does not match {MODEL_ID}: {len(missing)} missing and "
+            f"{len(unexpected)} unexpected tensors. Refusing to evaluate a partially "
+            "loaded model, which would score a mixture of two forecasters."
+        )
+    print(f"  loaded fine-tuned weights from {checkpoint.name}")
+    return model, "kronos_finetuned"
+
+
 def write_progress(run_dir: Path | None, stage: str, done: int, total: int) -> None:
     """Heartbeat for ``watch_run.py``.
 
@@ -446,6 +475,16 @@ def main() -> int:
         help="A4: temperature arms on a block-balanced panel; skips the full grid",
     )
     ap.add_argument("--sweep-size", type=int, default=60)
+    ap.add_argument(
+        "--checkpoint",
+        type=Path,
+        default=None,
+        help=(
+            "evaluate a fine-tuned checkpoint from A6 instead of the pretrained weights. "
+            "The model name in results.json changes to kronos_finetuned so a G4 comparison "
+            "can never silently score the wrong weights."
+        ),
+    )
     ap.add_argument("--skip-model", action="store_true", help="baselines only")
     ap.add_argument("--no-figures", action="store_true", help="skip figure rendering")
     ap.add_argument(
@@ -533,16 +572,18 @@ def main() -> int:
         # measure nothing new; the baselines do not depend on temperature at all, so their
         # full-grid numbers stand and no baseline arm belongs in this table.
         from eval.sampler import KronosSampler
-        from model import Kronos, KronosTokenizer
+        from model import KronosTokenizer
 
         print(f"\nloading {MODEL_ID} ...")
+        kronos_model, model_label = load_kronos(args.checkpoint)
         sampler = KronosSampler(
-            Kronos.from_pretrained(MODEL_ID),
+            kronos_model,
             KronosTokenizer.from_pretrained(TOKENIZER_ID),
             max_context=512,
         )
         payload["run"] = "A4_temperature_sweep"
         payload["config"]["device"] = str(sampler.device)
+        payload["config"]["checkpoint"] = str(args.checkpoint) if args.checkpoint else None
         payload["config"]["top_p"] = PRODUCTION_TOP_P
 
         rows, sweep_ens, panel, verdict = sweep_temperature(sampler, grid, args, run_dir)
@@ -610,15 +651,17 @@ def main() -> int:
     if not args.skip_model:
         import torch
         from eval.sampler import KronosSampler
-        from model import Kronos, KronosTokenizer
+        from model import KronosTokenizer
 
         print(f"\nloading {MODEL_ID} ...")
+        kronos_model, model_label = load_kronos(args.checkpoint)
         sampler = KronosSampler(
-            Kronos.from_pretrained(MODEL_ID),
+            kronos_model,
             KronosTokenizer.from_pretrained(TOKENIZER_ID),
             max_context=512,
         )
         payload["config"]["device"] = str(sampler.device)
+        payload["config"]["checkpoint"] = str(args.checkpoint) if args.checkpoint else None
 
         print(f"\n=== zero-shot Kronos ({len(grid)} windows) ===")
         if torch.cuda.is_available():
@@ -633,13 +676,13 @@ def main() -> int:
             args.seed,
             args.batch_size,
             run_dir=run_dir,
-            stage="kronos_zeroshot",
+            stage=model_label,
             checkpoint_every=args.checkpoint_every,
         )
         wall = time.perf_counter() - t0
 
-        ensembles["kronos_zeroshot"] = ens
-        payload["models"]["kronos_zeroshot"] = summarize(
+        ensembles[model_label] = ens
+        payload["models"][model_label] = summarize(
             grid.y_close, ens, grid.block_ids, seed=args.seed
         )
         payload["slices"] = regime_slices(grid, ens, args.seed)
@@ -654,7 +697,7 @@ def main() -> int:
                 grid.history_close,
                 np.array([str(d.date()) for d in grid.start_dates]),
             )
-            for name, e in {**ensembles, "kronos_zeroshot": ens}.items()
+            for name, e in {**ensembles, model_label: ens}.items()
         }
         payload["wall_clock"] = {
             "kronos_grid_seconds": round(wall, 1),
@@ -665,14 +708,14 @@ def main() -> int:
                 else None
             ),
         }
-        m = payload["models"]["kronos_zeroshot"]
+        m = payload["models"][model_label]
         print(
-            f"  kronos_zeroshot      crps={m['crps']:.4f} "
+            f"  {model_label:<20} crps={m['crps']:.4f} "
             f"cov@80={m['coverage']['80']['empirical']:.4f} ({wall:.0f}s)"
         )
         # The expensive stage is done. Make it survivable before starting the sweep --
         # this is exactly the work a mid-run GPU loss discarded twice.
-        checkpoint(run_dir, grid, ensembles, payload, "kronos_zeroshot")
+        checkpoint(run_dir, grid, ensembles, payload, model_label)
 
         if args.sweep_top_p:
             rows, sweep_ens, sub = sweep_top_p(sampler, grid, args, run_dir, payload)
