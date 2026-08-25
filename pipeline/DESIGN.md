@@ -56,6 +56,37 @@ be the 50% one, because it is the only one carrying a conditional guarantee.
 
 ---
 
+## 1a. What the served calibration actually is, and is not
+
+Measured on the seeded archive: 59 forecast dates, 236k matured rows, aggregated by date
+because a single day is one observation and not 5,310.
+
+| nominal | pooled | first 29 dates | last 30 dates |
+|---|---|---|---|
+| 0.50 | 0.5007 | 0.4520 | 0.5478 |
+| 0.80 | 0.7978 | 0.7449 | 0.8488 |
+| 0.90 | 0.8907 | 0.8554 | 0.9248 |
+
+**Do not quote the pooled column on its own.** ACI adapts online: early dates run on a cold
+state and under-cover, then the correction overshoots. Pooling averages those two errors
+into a figure that reads as near-perfect calibration and is really a warm-up transient and
+an overshoot cancelling out.
+
+The defensible claim is **"converges toward nominal, with a warm-up transient and some
+overshoot"** — not "calibrated to within half a point". `archive_coverage` now emits
+`warmup` and `recent` beside `empirical`, so the pooled number cannot be read alone by
+accident.
+
+Two things follow:
+
+* **Seeding was necessary, and this is the evidence.** The cold-state half sits 3–5 points
+  below nominal at every level. Day-one visitors to an unseeded site would have seen that.
+* **ACI's guarantee is asymptotic in update steps**, so a transient is expected behaviour,
+  not a defect. What would be a defect is reporting the average as though it were the
+  steady state.
+
+---
+
 ## 2. Muhurat is a scheduled future defect, not a historical footnote
 
 ### The problem

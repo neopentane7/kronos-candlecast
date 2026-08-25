@@ -520,8 +520,27 @@ are not comparable quantities.
 | 1.5 | 115.53 | 116.98 | 905.2 | 0.2989 | 0.4978 | 0.5878 | 0.0779 | 1.567 | 0.715 | 0.569 |
 
 > **Outcome of the pre-registered rule: no arm reached the 0.85 target at h = 30, so the
-> horizon compression is attributed to the tokenizer and normalization rather than to the
-> sampler, and `T = 1.0` remains the zero-shot reference config.**
+> branch labelled `tokenizer_limitation` fired and `T = 1.0` remains the zero-shot
+> reference config.**
+
+**Read that branch name narrowly.** What this run establishes is that *sampling temperature
+is not the cause*. It does not establish that the tokenizer is. The pre-registered rule
+named the alternative branch after the leading hypothesis, which is a convenience of
+labelling, not a result: **ruling out one candidate is not ruling in another.**
+
+Still untested and still live:
+
+| candidate | why it survives |
+|---|---|
+| quantisation bin width | a coarse price alphabet caps how finely the next-step distribution can spread |
+| the autoregressive loop | each step conditions on its own draws, so a mild per-step contraction compounds |
+| context length | 400 sessions at `max_context = 512` may under-inform the far horizon |
+| training-distribution mismatch | ~12B K-lines, largely not Indian daily equities |
+
+Distinguishing these needs instrumentation inside the model — per-step token-distribution
+entropy, or a swap of the tokenizer — which is out of scope for a gate that cost 30
+minutes. The honest claim for the report and for §19 is **"not the sampling policy"**, with
+the four candidates named as open.
 
 ### The tradeoff, shown rather than averaged away
 

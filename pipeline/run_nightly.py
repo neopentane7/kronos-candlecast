@@ -365,10 +365,14 @@ def seed_from_corpus(sessions: int, limit: int | None, seed: int) -> dict:
         f"    {cov.get('matured_rows', 0)} matured rows over "
         f"{cov.get('forecast_dates', 0)} forecast dates"
     )
+    print(f"    {'level':>7}{'pooled':>10}{'warm-up':>10}{'recent':>9}")
     for lvl in ("0.50", "0.80", "0.90"):
         d = cov.get(lvl)
         if d:
-            print(f"    nominal {lvl}   empirical {d['empirical']:.4f}   ({d['dates']} dates)")
+            w = f"{d['warmup']:.4f}" if d["warmup"] is not None else "    -"
+            r = f"{d['recent']:.4f}" if d["recent"] is not None else "    -"
+            print(f"    {lvl:>7}{d['empirical']:>10.4f}{w:>10}{r:>9}")
+    print("    pooled can read near-nominal by cancelling warm-up against overshoot")
     last["archive_coverage"] = cov
     return last
 
@@ -397,16 +401,30 @@ def archive_coverage(corpus: dict[str, pd.DataFrame]) -> dict:
     if matured.empty:
         return {}
 
+    dates = sorted(matured["forecast_date"].unique())
+    half = len(dates) // 2
+    early, late = set(dates[:half]), set(dates[half:])
+
     out = {
         "matured_rows": int(len(matured)),
-        "forecast_dates": int(matured["forecast_date"].nunique()),
+        "forecast_dates": int(len(dates)),
+        "note": (
+            "ACI adapts online, so early dates run on a cold state and later ones on a "
+            "warm one. The pooled figure averages a warm-up transient against the steady "
+            "state and can read near-nominal by cancellation; `recent` is what a user "
+            "actually gets today."
+        ),
     }
     for lvl, grp in matured.groupby("level"):
         hit = (grp["lo"] <= grp["actual"]) & (grp["actual"] <= grp["hi"])
         per_date = hit.groupby(grp["forecast_date"]).mean()
+        e = per_date[per_date.index.isin(early)]
+        late_d = per_date[per_date.index.isin(late)]
         out[f"{float(lvl):.2f}"] = {
             "nominal": float(lvl),
             "empirical": round(float(per_date.mean()), 4),
+            "warmup": round(float(e.mean()), 4) if e.size else None,
+            "recent": round(float(late_d.mean()), 4) if late_d.size else None,
             "dates": int(per_date.size),
         }
     return out
