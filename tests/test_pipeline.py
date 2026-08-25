@@ -209,7 +209,34 @@ def test_index_and_history_agree_with_the_forecasts():
 
 
 @needs_run
-def test_seeded_records_are_all_flagged_backfilled():
+def test_the_backfilled_flag_discriminates_seeded_from_live():
+    """Conflict #10: seeded history must be distinguishable from a real forecast.
+
+    The flag's job is to *separate* the two, not to be uniformly true -- asserting the
+    latter passes only until the first live run and then fails for the right reason,
+    which is exactly what happened on the first Actions run.
+
+    A forecast date is either entirely seeded or entirely live. A mixed date would mean
+    a replay and a live run wrote the same partition, and no reader could tell which
+    rows were which.
+    """
     df = archive.read_all(ARCHIVE)
     assert not df.empty
-    assert df["backfilled"].all(), "seeded archive rows must be flagged (conflict #10)"
+
+    per_date = df.groupby("forecast_date")["backfilled"].nunique()
+    mixed = sorted(per_date[per_date > 1].index)
+    assert not mixed, f"these dates mix seeded and live rows: {mixed}"
+
+    flags = df.groupby("forecast_date")["backfilled"].first()
+    assert flags.any(), "no seeded history present -- run --seed-from-corpus first"
+
+
+@needs_run
+def test_the_latest_run_summary_agrees_with_the_archive():
+    """The summary is what the site badges off, so it must match what was written."""
+    summary = json.loads((SITE / "run_summary.json").read_text())
+    df = archive.read_all(ARCHIVE)
+    today = df[df["forecast_date"] == summary["forecast_date"]]
+    assert not today.empty, "the summary names a date the archive does not contain"
+    assert bool(today["backfilled"].iloc[0]) == bool(summary["backfilled"])
+    assert set(today["engine"].unique()) == {summary["engine"]}
