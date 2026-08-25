@@ -1,38 +1,20 @@
 {
-  "generated_at": "2026-08-25T09:12:41+00:00",
-  "forecast_date": "2026-06-30",
-  "mode": "as-of",
-  "backfilled": true,
+  "generated_at": "2026-08-25T13:41:31+00:00",
+  "forecast_date": "2026-08-25",
+  "mode": "live",
+  "backfilled": false,
   "engine": "rw_drift",
-  "forecast": 59,
+  "forecast": 60,
   "skipped": [],
   "aci": {
     "gamma": 0.005,
     "provisional": true,
     "updates": 236295,
     "clamped": 9,
-    "scored": 5310,
-    "covered": 4151,
-    "coverage": 0.7817,
-    "by_level": {
-      "0.50": {
-        "n": 1770,
-        "empirical": 0.5497,
-        "nominal": 0.5
-      },
-      "0.80": {
-        "n": 1770,
-        "empirical": 0.861,
-        "nominal": 0.8
-      },
-      "0.90": {
-        "n": 1770,
-        "empirical": 0.9345,
-        "nominal": 0.9
-      }
-    },
-    "tickers": 59
+    "scored": 0,
+    "covered": 0,
+    "tickers": 0
   },
   "split_conformal_50": 0.9752044008789673,
-  "wall_seconds": 3.3
+  "wall_seconds": 20.3
 }
