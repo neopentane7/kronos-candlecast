@@ -27,7 +27,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
 from pipeline.calibration import QUANTILE_METHOD  # noqa: E402
-from pipeline.engines import ENSEMBLE_SIZE, HORIZON, LOOKBACK, RandomWalkDrift  # noqa: E402
+from pipeline.engines import HORIZON, LOOKBACK, SERVING_ENSEMBLE_SIZE, RandomWalkDrift  # noqa: E402
 
 VAL_START, VAL_END = "2024-01-01", "2024-12-31"
 STRIDE = 30
@@ -81,7 +81,7 @@ def collect_scores(parquet_root: Path, seed: int) -> tuple[dict[str, list[np.nda
             if len(bars) < LOOKBACK or actual.size < HORIZON:
                 continue
 
-            paths = engine.forecast(bars, horizon=HORIZON, m=ENSEMBLE_SIZE, seed=seed)
+            paths = engine.forecast(bars, horizon=HORIZON, m=SERVING_ENSEMBLE_SIZE, seed=seed)
             tail = (1 - LEVEL) / 2
             lo = np.quantile(paths, tail, axis=0, method=QUANTILE_METHOD)
             hi = np.quantile(paths, 1 - tail, axis=0, method=QUANTILE_METHOD)

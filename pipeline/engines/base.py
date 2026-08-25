@@ -22,6 +22,16 @@ LOOKBACK = 400
 HORIZON = 30
 ENSEMBLE_SIZE = 30
 
+# Serving draws far more paths than the evaluation did, and the difference is deliberate.
+# m=30 was the *comparison* size: Phase A scored Kronos and the baseline at equal ensemble
+# size so neither gained from the finite-ensemble coverage bias (report section 1). Nothing
+# about serving needs that constraint, and rw_drift is analytic -- 5000 paths cost 3.4ms per
+# ticker. At m=30 the 10th percentile rests on about three order statistics, so the cone
+# visibly wiggles instead of widening; at m=5000 the 80% band is monotone at every step.
+# Weibull plotting positions are unbiased at any m, so this removes variance without
+# introducing bias.
+SERVING_ENSEMBLE_SIZE = 5000
+
 
 class Engine(ABC):
     """A probabilistic forecaster over a single ticker's close prices."""

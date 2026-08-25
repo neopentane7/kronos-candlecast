@@ -90,7 +90,9 @@ export function Cone({ history, forecast }: { history: Session[]; forecast: Fore
       color: MUTED,
       lineWidth: 1,
       lineStyle: LineStyle.Dotted,
-      axisLabelVisible: true,
+      // The candlestick series already labels this price on the axis; a second
+      // label two rows below reads as two different numbers at a glance.
+      axisLabelVisible: false,
       title: "last close",
     });
 

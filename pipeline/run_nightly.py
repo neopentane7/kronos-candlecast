@@ -38,7 +38,7 @@ from pipeline import archive  # noqa: E402
 from pipeline.aci import ACIState  # noqa: E402
 from pipeline.calibration import build_bands, enforce_monotone, path_probabilities  # noqa: E402
 from pipeline.contract import BandMethods, Forecast, Metadata, Quantiles, RawQuantiles  # noqa: E402
-from pipeline.engines import ENSEMBLE_SIZE, HORIZON, LOOKBACK, RandomWalkDrift  # noqa: E402
+from pipeline.engines import HORIZON, LOOKBACK, SERVING_ENSEMBLE_SIZE, RandomWalkDrift  # noqa: E402
 
 STATE_DIR = REPO_ROOT / "pipeline" / "state"
 ACI_PATH = STATE_DIR / "aci_state.json"
@@ -88,7 +88,7 @@ def forecast_one(
 ) -> tuple[Forecast, pd.DataFrame]:
     engine = RandomWalkDrift()
     params = engine.params(bars)
-    paths = engine.forecast(bars, horizon=HORIZON, m=ENSEMBLE_SIZE, seed=seed)
+    paths = engine.forecast(bars, horizon=HORIZON, m=SERVING_ENSEMBLE_SIZE, seed=seed)
 
     bands = enforce_monotone(build_bands(paths, ticker, aci_state, split_scale))
     probs = path_probabilities(paths, params["last_close"], params["sigma_per_session"])
@@ -124,7 +124,7 @@ def forecast_one(
             band_methods=BandMethods(band_50=bands["method_50"]),
             aci_gamma=aci_state.gamma,
             aci_provisional=aci_state.provisional,
-            ensemble_size=ENSEMBLE_SIZE,
+            ensemble_size=SERVING_ENSEMBLE_SIZE,
             lookback=LOOKBACK,
             engine_validated=engine.validated,
             note=(

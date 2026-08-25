@@ -1,10 +1,10 @@
 {
   "level": 0.5,
-  "scale_50": 1.0068304016545477,
+  "scale_50": 0.9752044008789673,
   "n_calibration_dates": 17,
   "n_tickers": 59,
   "n_pooled_residuals": 15930,
-  "pooled_scale_for_comparison": 1.0156267925569773,
+  "pooled_scale_for_comparison": 1.0209508860803451,
   "dates": [
     "2024-01-01",
     "2024-02-14",
