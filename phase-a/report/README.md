@@ -630,17 +630,21 @@ Run `20260808T161433Z_d6602cd`, nominal 80%, 708 windows.
 
 Three findings, in order of importance:
 
-**1. No Kronos arm reaches nominal.** The best is Mondrian at 0.681 — 12pp short — and it
-gets there with the widest bands in the table. The null lands at 0.796, essentially exact.
+**1. No Kronos arm reaches nominal — but read §12b before generalising that.** The best
+here is Mondrian at 0.681, twelve points short, with the widest bands in the table. Under
+the pre-registered design, with a calibration set from a different year, every Kronos arm
+*overshoots* nominal instead. The shortfall in this table is an artifact of calibrating
+inside the test period; the verdict survives for a different reason, which §12b gives.
 
 **2. The null is also 30% sharper.** Conformalized RW-drift achieves nominal at relative
 width 0.146; Mondrian achieves 0.681 at 0.211. Since conformal gives both arms coverage by
 construction, sharpness at matched coverage is the only discriminating comparison
 available (§14) — and it is not close.
 
-**3. Mondrian is inverted.** Its coverage runs 0.761 / 0.660 / **0.597** from calm to
-volatile: it is *worst* in the volatile stratum, which is precisely where stratification
-was supposed to help. Its regime spread (0.164) is double the null's (0.080) and eight
+**3. Mondrian is inverted *here*.** Its coverage runs 0.761 / 0.660 / **0.597** from calm
+to volatile — worst in the volatile stratum, precisely where stratification should help.
+**This does not survive §12b**, where the same arm is correctly ordered at spread 0.063.
+The inversion belongs to the within-test calibration set, not to Mondrian (retired as R8). Its regime spread (0.164) is double the null's (0.080) and eight
 times its own raw input's (0.022). Under §16's rule — spread above 0.10 is reported as not
 calibrated — **Mondrian fails**, while achieving the highest marginal coverage of any
 Kronos arm. That is exactly the "technically true and substantively misleading" failure
@@ -656,6 +660,86 @@ That gap is exchangeability failure across a temporal split, measured directly r
 argued. It is the mechanism §17d reasons about, and it is asymmetric: the same split leaves
 the random-walk null at 0.796. Kronos's residual distribution shifts across the test period
 far more than the random walk's does.
+
+## 12b. A5 — the pre-registered conformal result
+
+Calibrated on the 2024 validation grid (`20260825T163727Z_56018da`), evaluated on the full
+test grid. Calibration and evaluation come from **different runs**, not two halves of one:
+the test period is measured, never fitted. The rule was fixed in writing on 2026-08-06,
+before either grid ran.
+
+**465 calibration windows over 8 shared blocks.** Seven windows were dropped as orphans —
+all `BAJAJ-AUTO`, displaced by its 2024-01-15 hole (§17b), whose forecast dates no other
+ticker shares and which are therefore not exchangeable with the rest.
+
+| arm | marginal | calm | mid | volatile | spread | rel. width | vs null |
+|---|---|---|---|---|---|---|---|
+| raw_kronos | 0.413 | 0.364 | 0.393 | 0.481 | 0.117 | 0.0927 | 0.53× |
+| marginal_conformal | 0.921 | 0.898 | 0.914 | 0.952 | 0.053 | 0.4291 | **2.44×** |
+| normalized_lookback_vol | 0.919 | 0.877 | 0.927 | 0.952 | 0.074 | 0.3918 | 2.23× |
+| mondrian | **0.925** | 0.886 | 0.948 | 0.941 | **0.063** | 0.4371 | **2.49×** |
+| **conformalized_rw_drift** | 0.843 | 0.792 | 0.835 | 0.902 | 0.110 | **0.1757** | 1.00× |
+
+### The conclusion holds; the mechanism is different
+
+§12a's ablation said conformal *cannot lift Kronos to nominal*. That was an artifact of
+calibrating inside the test period. Given a calibration set from a genuinely different
+year, every Kronos arm clears nominal comfortably — and **overshoots it, to 0.92, at two
+and a half times the null's width.**
+
+So the finding is not "conformal fails to fix the coverage". It is:
+
+> **Conformal fixes Kronos's coverage by inflating the band 4.6× (0.0927 → 0.4291), and the
+> result is still 2.4× wider than the null at *higher* coverage than anyone asked for.**
+
+That is §14's bar behaving exactly as designed. Coverage cannot separate these arms —
+conformal grants it to any of them by construction — so sharpness at matched coverage is
+the only discriminating comparison, and it is not close. Note also that **raw Kronos is
+already the narrowest arm in the table (0.53× the null)** while covering 0.413. A band that
+narrow and that wrong is not under-dispersed; it is misplaced, which is §8's location error
+seen from the calibration side.
+
+### Why the Kronos arms overshoot, and the null does not
+
+| model | cov@80 on 2024 val | cov@80 on test | drift |
+|---|---|---|---|
+| kronos_zeroshot | 0.2411 | 0.4126 | **+0.1715** |
+| random_walk_drift | 0.7868 | 0.8370 | +0.0502 |
+
+Kronos was far worse in 2024 than in the test period, so a correction fitted there is far
+too large when applied here. The null's miscalibration is comparatively stable and its
+correction transfers.
+
+**This is exchangeability failure measured in the pre-registered direction** — and it is the
+more damaging version of the finding. A calibration layer whose required correction moves
+17 points between adjacent periods is not a fix; it is a second thing that needs
+calibrating. §12a measured the same instability *inside* the test window; A5 shows it
+across the val/test boundary as well.
+
+### Mondrian is not inverted here — CORRECTION to §12a
+
+The ablation reported Mondrian's regime spread at 0.164 and **inverted**, worst in the
+volatile stratum. Under the pre-registered design it is 0.063 and correctly ordered
+(0.886 / 0.948 / 0.941), the **best** conditional calibration of any Kronos arm.
+
+The inversion was an artifact of a calibration set drawn from the same period as the test
+set. It is recorded as retired; the underlying verdict on Mondrian is unchanged, because
+its 0.925 coverage still costs 2.49× the null's width.
+
+### The pre-registered design is itself below the feasibility floor
+
+**8 shared calibration blocks. §17d's floor at 80% is 9.**
+
+So even the analysis fixed in advance cannot supply a finite-sample guarantee at its
+headline level. The coverage numbers above are honest empirical measurements; the
+*guarantee* is absent, and no arrangement of this corpus supplies it.
+
+That is not a defect in the design — it is F4 arriving on schedule. The feasibility result
+predicted that 80% would be unreachable on this geometry, and the pre-registered analysis
+is the case that demonstrates it: the best-specified conformal study this project can run
+still falls one block short of the level it wants to certify. **50% remains the only level
+with a guarantee**, which is why the serving path carries split conformal there and ACI
+above it.
 
 ---
 

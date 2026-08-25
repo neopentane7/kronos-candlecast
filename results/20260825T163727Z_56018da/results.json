@@ -1,0 +1,464 @@
+{
+  "git_sha": "56018da",
+  "disclaimer": "Research/education tool - scenario visualization, not investment advice.",
+  "run": "A3_zero_shot_gate",
+  "split": "val",
+  "grid": {
+    "split": "val",
+    "split_range": [
+      "2024-01-01",
+      "2024-12-31"
+    ],
+    "lookback": 400,
+    "horizon": 30,
+    "stride": 30,
+    "n_windows": 472,
+    "n_tickers": 59,
+    "n_distinct_start_dates": 15,
+    "n_windows_evaluated": 472
+  },
+  "config": {
+    "model": "NeoQuasar/Kronos-small",
+    "tokenizer": "NeoQuasar/Kronos-Tokenizer-base",
+    "lookback": 400,
+    "horizon": 30,
+    "stride": 30,
+    "sample_count": 30,
+    "temperature": 1.0,
+    "top_p": 0.9,
+    "top_k": 0,
+    "seed": 1234,
+    "device": "cuda:0"
+  },
+  "measurement": {
+    "quantile_method": "weibull",
+    "crps_estimator": "fair",
+    "note": "Coverage and CRPS are both ensemble-size dependent. Weibull plotting positions and Ferro's fair CRPS remove that dependence; naive values are reported alongside so the size of each correction is visible."
+  },
+  "models": {
+    "last_value": {
+      "n_windows": 472,
+      "horizon": 30,
+      "n_samples": 30,
+      "effective_blocks": 15,
+      "point": {
+        "mae": 95.99416506482383,
+        "rmse": 214.26615584265238,
+        "mape": 0.04981406887926555
+      },
+      "crps": 95.99416506482383,
+      "crps_estimator": "fair",
+      "crps_naive": 95.99416506482383,
+      "quantile_method": "weibull",
+      "interval_score_80": 959.9416506482387,
+      "pinball": 47.99708253241192,
+      "coverage": {
+        "50": {
+          "nominal": 0.5,
+          "empirical": 0.000635593220338983,
+          "ci95": [
+            0.00027932960893854746,
+            0.001027077497665733
+          ],
+          "covers_nominal": false
+        },
+        "80": {
+          "nominal": 0.8,
+          "empirical": 0.000635593220338983,
+          "ci95": [
+            0.00027932960893854746,
+            0.001027077497665733
+          ],
+          "covers_nominal": false
+        },
+        "90": {
+          "nominal": 0.9,
+          "empirical": 0.000635593220338983,
+          "ci95": [
+            0.00027932960893854746,
+            0.001027077497665733
+          ],
+          "covers_nominal": false
+        }
+      }
+    },
+    "random_walk_drift": {
+      "n_windows": 472,
+      "horizon": 30,
+      "n_samples": 30,
+      "effective_blocks": 15,
+      "point": {
+        "mae": 101.45228135295834,
+        "rmse": 230.68891706778825,
+        "mape": 0.05298005244065251
+      },
+      "crps": 71.91508058984508,
+      "crps_estimator": "fair",
+      "crps_naive": 73.98838298390834,
+      "quantile_method": "weibull",
+      "interval_score_80": 486.8696873749181,
+      "pinball": 36.3672042959819,
+      "coverage": {
+        "50": {
+          "nominal": 0.5,
+          "empirical": 0.4902542372881356,
+          "ci95": [
+            0.4190855407507289,
+            0.5518440959523847
+          ],
+          "covers_nominal": true
+        },
+        "80": {
+          "nominal": 0.8,
+          "empirical": 0.7867937853107345,
+          "ci95": [
+            0.7119676838990783,
+            0.8449946077235234
+          ],
+          "covers_nominal": true
+        },
+        "90": {
+          "nominal": 0.9,
+          "empirical": 0.8932909604519774,
+          "ci95": [
+            0.8423053278688525,
+            0.9329812605707294
+          ],
+          "covers_nominal": true
+        }
+      }
+    },
+    "kronos_zeroshot": {
+      "n_windows": 472,
+      "horizon": 30,
+      "n_samples": 30,
+      "effective_blocks": 15,
+      "point": {
+        "mae": 280.19332902717724,
+        "rmse": 602.310807323751,
+        "mape": 0.1367462918731982
+      },
+      "crps": 245.73979665900444,
+      "crps_estimator": "fair",
+      "crps_naive": 247.17771803063496,
+      "quantile_method": "weibull",
+      "interval_score_80": 2152.6277334898205,
+      "pinball": 122.79071419441297,
+      "coverage": {
+        "50": {
+          "nominal": 0.5,
+          "empirical": 0.12556497175141243,
+          "ci95": [
+            0.09526826814125867,
+            0.16231081192358368
+          ],
+          "covers_nominal": false
+        },
+        "80": {
+          "nominal": 0.8,
+          "empirical": 0.24110169491525424,
+          "ci95": [
+            0.18385115991391726,
+            0.309390689786615
+          ],
+          "covers_nominal": false
+        },
+        "90": {
+          "nominal": 0.9,
+          "empirical": 0.3147598870056497,
+          "ci95": [
+            0.2441288890348189,
+            0.3979950667321706
+          ],
+          "covers_nominal": false
+        }
+      }
+    }
+  },
+  "last_checkpoint": "kronos_zeroshot",
+  "slices": {
+    "by_atr_tercile": {
+      "calm": {
+        "n_windows": 157,
+        "horizon": 30,
+        "n_samples": 30,
+        "effective_blocks": 9,
+        "point": {
+          "mae": 326.8842648451495,
+          "rmse": 655.4551191274579,
+          "mape": 0.0998397959955408
+        },
+        "crps": 286.9491151499917,
+        "crps_estimator": "fair",
+        "crps_naive": 288.5827087040042,
+        "quantile_method": "weibull",
+        "interval_score_80": 2517.4537102960476,
+        "pinball": 143.3318205274837,
+        "coverage": {
+          "50": {
+            "nominal": 0.5,
+            "empirical": 0.1386411889596603,
+            "ci95": [
+              0.11869208027744613,
+              0.16313139674894642
+            ],
+            "covers_nominal": false
+          },
+          "80": {
+            "nominal": 0.8,
+            "empirical": 0.24331210191082803,
+            "ci95": [
+              0.20271320285365624,
+              0.2915224358974359
+            ],
+            "covers_nominal": false
+          },
+          "90": {
+            "nominal": 0.9,
+            "empirical": 0.3227176220806794,
+            "ci95": [
+              0.27056539955730224,
+              0.38391613325073987
+            ],
+            "covers_nominal": false
+          }
+        }
+      },
+      "mid": {
+        "n_windows": 157,
+        "horizon": 30,
+        "n_samples": 30,
+        "effective_blocks": 14,
+        "point": {
+          "mae": 348.6893545438277,
+          "rmse": 727.7167739522843,
+          "mape": 0.14108680893787273
+        },
+        "crps": 307.8243785921682,
+        "crps_estimator": "fair",
+        "crps_naive": 309.53130874355895,
+        "quantile_method": "weibull",
+        "interval_score_80": 2713.6688050336898,
+        "pinball": 153.9329703178811,
+        "coverage": {
+          "50": {
+            "nominal": 0.5,
+            "empirical": 0.09957537154989385,
+            "ci95": [
+              0.0747844827586207,
+              0.1336161324995114
+            ],
+            "covers_nominal": false
+          },
+          "80": {
+            "nominal": 0.8,
+            "empirical": 0.20191082802547772,
+            "ci95": [
+              0.15826334560515415,
+              0.263663281561131
+            ],
+            "covers_nominal": false
+          },
+          "90": {
+            "nominal": 0.9,
+            "empirical": 0.256687898089172,
+            "ci95": [
+              0.2037177629036225,
+              0.331404896664094
+            ],
+            "covers_nominal": false
+          }
+        }
+      },
+      "volatile": {
+        "n_windows": 158,
+        "horizon": 30,
+        "n_samples": 30,
+        "effective_blocks": 8,
+        "point": {
+          "mae": 165.7353990934066,
+          "rmse": 361.41461176095453,
+          "mape": 0.1691061568962255
+        },
+        "crps": 143.09965509829746,
+        "crps_estimator": "fair",
+        "crps_naive": 144.0758365265335,
+        "quantile_method": "weibull",
+        "interval_score_80": 1232.6206031672561,
+        "pinball": 71.43446162683954,
+        "coverage": {
+          "50": {
+            "nominal": 0.5,
+            "empirical": 0.13839662447257384,
+            "ci95": [
+              0.0769381189586669,
+              0.201984126984127
+            ],
+            "covers_nominal": false
+          },
+          "80": {
+            "nominal": 0.8,
+            "empirical": 0.27784810126582277,
+            "ci95": [
+              0.16622792397660818,
+              0.3960882352941176
+            ],
+            "covers_nominal": false
+          },
+          "90": {
+            "nominal": 0.9,
+            "empirical": 0.36455696202531646,
+            "ci95": [
+              0.23355555555555554,
+              0.5038881967515688
+            ],
+            "covers_nominal": false
+          }
+        }
+      }
+    },
+    "by_horizon_step": {
+      "1": {
+        "crps_fair": 75.46354509497978,
+        "interval_score_80": 535.3162393307282
+      },
+      "5": {
+        "crps_fair": 195.91839552449724,
+        "interval_score_80": 1648.2589757735445
+      },
+      "10": {
+        "crps_fair": 237.46185156361403,
+        "interval_score_80": 2075.0097859471534
+      },
+      "20": {
+        "crps_fair": 276.2002837152552,
+        "interval_score_80": 2448.735668396546
+      },
+      "30": {
+        "crps_fair": 312.705594554775,
+        "interval_score_80": 2767.9275127477563
+      }
+    }
+  },
+  "cross_sectional_ic": {
+    "last_value": {
+      "1": {
+        "ic": null,
+        "rank_ic": null,
+        "ic_std": null,
+        "n_dates_used": 0,
+        "n_dates_total": 15,
+        "min_names_per_date": 5
+      },
+      "5": {
+        "ic": null,
+        "rank_ic": null,
+        "ic_std": null,
+        "n_dates_used": 0,
+        "n_dates_total": 15,
+        "min_names_per_date": 5
+      },
+      "10": {
+        "ic": null,
+        "rank_ic": null,
+        "ic_std": null,
+        "n_dates_used": 0,
+        "n_dates_total": 15,
+        "min_names_per_date": 5
+      },
+      "30": {
+        "ic": null,
+        "rank_ic": null,
+        "ic_std": null,
+        "n_dates_used": 0,
+        "n_dates_total": 15,
+        "min_names_per_date": 5
+      }
+    },
+    "random_walk_drift": {
+      "1": {
+        "ic": -0.04028927407165046,
+        "rank_ic": 0.00740141191669999,
+        "ic_std": 0.12732175296503173,
+        "n_dates_used": 8,
+        "n_dates_total": 15,
+        "min_names_per_date": 5
+      },
+      "5": {
+        "ic": 0.010091617176841004,
+        "rank_ic": -0.05032990864068414,
+        "ic_std": 0.13113306795577231,
+        "n_dates_used": 8,
+        "n_dates_total": 15,
+        "min_names_per_date": 5
+      },
+      "10": {
+        "ic": 0.06955473375088513,
+        "rank_ic": 0.007852440862530383,
+        "ic_std": 0.14523119429828507,
+        "n_dates_used": 8,
+        "n_dates_total": 15,
+        "min_names_per_date": 5
+      },
+      "30": {
+        "ic": 0.04812250080669117,
+        "rank_ic": 0.0006748131286720624,
+        "ic_std": 0.1555347223125553,
+        "n_dates_used": 8,
+        "n_dates_total": 15,
+        "min_names_per_date": 5
+      }
+    },
+    "kronos_zeroshot": {
+      "1": {
+        "ic": -0.05024307731134307,
+        "rank_ic": -0.011449521670921906,
+        "ic_std": 0.16958351979360023,
+        "n_dates_used": 8,
+        "n_dates_total": 15,
+        "min_names_per_date": 5
+      },
+      "5": {
+        "ic": -0.0037768546130952096,
+        "rank_ic": -0.004102325509858808,
+        "ic_std": 0.1609505491863794,
+        "n_dates_used": 8,
+        "n_dates_total": 15,
+        "min_names_per_date": 5
+      },
+      "10": {
+        "ic": -0.039883339214751956,
+        "rank_ic": -0.06643737118951676,
+        "ic_std": 0.20032388473954005,
+        "n_dates_used": 8,
+        "n_dates_total": 15,
+        "min_names_per_date": 5
+      },
+      "30": {
+        "ic": -0.0270860860358897,
+        "rank_ic": -0.02816989141468517,
+        "ic_std": 0.2259584159684788,
+        "n_dates_used": 8,
+        "n_dates_total": 15,
+        "min_names_per_date": 5
+      }
+    }
+  },
+  "wall_clock": {
+    "kronos_grid_seconds": 3376.3,
+    "seconds_per_window": 7.153,
+    "peak_vram_mb": 9804.4
+  },
+  "artifacts": {
+    "ensembles": "ensembles.npz",
+    "note": "forecast paths and grid alignment, for offline re-analysis without a GPU",
+    "figures": [
+      "reliability.png",
+      "horizon_crps.png",
+      "pit_last_value.png",
+      "pit_random_walk_drift.png",
+      "pit_kronos_zeroshot.png",
+      "coverage_by_regime.png"
+    ]
+  }
+}

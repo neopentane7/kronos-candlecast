@@ -304,6 +304,24 @@ def main() -> int:
             f"{a['relative_width']:>8.4f}"
         )
     print(f"\ncalibration per stratum: {cf['calibration_windows_per_stratum']}")
+
+    pre = payload.get("conformal_preregistered")
+    if pre:
+        print()
+        print(f"=== PRE-REGISTERED (calibrated on {payload['calibration_run']}) ===")
+        print(
+            f"  {pre['n_calibration_windows']} calibration windows over "
+            f"{pre['calibration_blocks']} shared blocks; "
+            f"{pre['calibration_windows_dropped_as_orphans']} orphan windows dropped"
+        )
+        print(f"  per stratum: {pre['calibration_windows_per_stratum']}")
+        print()
+        print(f"{'arm':<28} {'marginal':>9} {'spread':>8} {'width':>8}")
+        for name, a in pre["arms"].items():
+            print(
+                f"{name:<28} {a['marginal']:>9.3f} {a['regime_spread']:>8.3f} "
+                f"{a['relative_width']:>8.4f}"
+            )
     print(f"analysis: {path}")
     print(f"\n{DISCLAIMER}")
     return 0

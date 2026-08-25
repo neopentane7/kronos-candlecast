@@ -49,3 +49,7 @@ candlecast-web/dist/
 candlecast-web/public/data/
 candlecast-web/dev-dist/
 candlecast-web/tsconfig.tsbuildinfo
+
+# Staging folder for artifacts pulled off a cloud runner. Everything worth keeping is
+# imported into results/ ; this is a scratch copy and duplicates it.
+results1/

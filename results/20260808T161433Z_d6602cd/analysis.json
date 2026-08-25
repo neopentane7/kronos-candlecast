@@ -1,7 +1,7 @@
 {
-  "git_sha": "8ace800-dirty",
+  "git_sha": "56018da-dirty",
   "disclaimer": "Research/education tool - scenario visualization, not investment advice.",
-  "run": "A3_offline_analysis",
+  "run": "A5_preregistered_conformal",
   "source_run": "20260808T161433Z_d6602cd",
   "n_windows": 708,
   "recentering": {
@@ -130,6 +130,71 @@
         "relative_width": 0.14640242309497717
       }
     }
+  },
+  "calibration_run": "20260825T163727Z_56018da",
+  "conformal_preregistered": {
+    "design": "preregistered_val_2024",
+    "n_calibration_windows": 465,
+    "n_test_windows": 708,
+    "calibration_windows_per_stratum": [
+      156,
+      151,
+      158
+    ],
+    "arms": {
+      "raw_kronos": {
+        "marginal": 0.41261770244821094,
+        "by_regime": {
+          "calm": 0.36398305084745763,
+          "mid": 0.393361581920904,
+          "volatile": 0.48050847457627116
+        },
+        "regime_spread": 0.11652542372881353,
+        "relative_width": 0.09272300833871741
+      },
+      "marginal_conformal": {
+        "marginal": 0.921421845574388,
+        "by_regime": {
+          "calm": 0.8983050847457628,
+          "mid": 0.9144067796610169,
+          "volatile": 0.9515536723163842
+        },
+        "regime_spread": 0.05324858757062145,
+        "relative_width": 0.4291025636472064
+      },
+      "normalized_lookback_vol": {
+        "marginal": 0.9188323917137476,
+        "by_regime": {
+          "calm": 0.8774011299435028,
+          "mid": 0.9272598870056498,
+          "volatile": 0.9518361581920904
+        },
+        "regime_spread": 0.07443502824858761,
+        "relative_width": 0.39175233444648944
+      },
+      "mondrian": {
+        "marginal": 0.9249058380414312,
+        "by_regime": {
+          "calm": 0.885593220338983,
+          "mid": 0.9481638418079096,
+          "volatile": 0.9409604519774011
+        },
+        "regime_spread": 0.06257062146892656,
+        "relative_width": 0.4371476355640671
+      },
+      "conformalized_rw_drift": {
+        "marginal": 0.8428436911487759,
+        "by_regime": {
+          "calm": 0.7915254237288135,
+          "mid": 0.83545197740113,
+          "volatile": 0.9015536723163842
+        },
+        "regime_spread": 0.11002824858757065,
+        "relative_width": 0.17567019536526807
+      }
+    },
+    "calibration_windows_dropped_as_orphans": 7,
+    "calibration_blocks": 8
   },
   "note": "written by run_analysis.py"
 }
