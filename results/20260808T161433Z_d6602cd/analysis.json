@@ -1,11 +1,13 @@
 {
+  "git_sha": "8ace800-dirty",
+  "disclaimer": "Research/education tool - scenario visualization, not investment advice.",
   "run": "A3_offline_analysis",
   "source_run": "20260808T161433Z_d6602cd",
   "n_windows": 708,
   "recentering": {
-    "bias_per_step_first": -0.0014318318585047954,
-    "bias_per_step_last": -0.021982221615970545,
-    "bias_per_step_mean": -0.018060047694640216,
+    "bias_per_step_first": -0.001431832768152351,
+    "bias_per_step_last": -0.021982223048027782,
+    "bias_per_step_mean": -0.018060047943224775,
     "raw": {
       "coverage": [
         0.22857815442561205,
@@ -68,6 +70,7 @@
     }
   },
   "conformal": {
+    "design": "within_test_split",
     "n_calibration_windows": 354,
     "n_test_windows": 354,
     "calibration_windows_per_stratum": [
@@ -84,7 +87,7 @@
           "volatile": 0.36391752577319586
         },
         "regime_spread": 0.021713224697927025,
-        "relative_width": 0.08453826654815698
+        "relative_width": 0.08453826670274768
       },
       "marginal_conformal": {
         "marginal": 0.6621468926553672,
@@ -94,7 +97,7 @@
           "volatile": 0.6896907216494845
         },
         "regime_spread": 0.05501330229464585,
-        "relative_width": 0.2015378839176406
+        "relative_width": 0.20153789518853513
       },
       "normalized_lookback_vol": {
         "marginal": 0.6272128060263653,
@@ -104,7 +107,7 @@
           "volatile": 0.7027491408934707
         },
         "regime_spread": 0.12455365217166625,
-        "relative_width": 0.1724821494912031
+        "relative_width": 0.1724821262499422
       },
       "mondrian": {
         "marginal": 0.6808851224105461,
@@ -114,7 +117,7 @@
           "volatile": 0.5969072164948453
         },
         "regime_spread": 0.1644962922770845,
-        "relative_width": 0.2105318275197442
+        "relative_width": 0.21053181341961724
       },
       "conformalized_rw_drift": {
         "marginal": 0.7957627118644067,
@@ -124,8 +127,9 @@
           "volatile": 0.8323024054982818
         },
         "regime_spread": 0.0796708265509134,
-        "relative_width": 0.14640241207120738
+        "relative_width": 0.14640242309497717
       }
     }
-  }
+  },
+  "note": "written by run_analysis.py"
 }

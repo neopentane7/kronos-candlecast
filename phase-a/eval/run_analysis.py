@@ -106,42 +106,120 @@ def dispersion_by_horizon(obs, ens, history, terciles) -> dict:
     }
 
 
+def shared_block_mask(blocks: np.ndarray, tickers: np.ndarray) -> np.ndarray:
+    """Windows on dates the whole universe traded.
+
+    Report §17b: one ticker with an offset session index produces forecast dates nobody
+    else shares, and those orphan dates are not exchangeable with the rest. The 2024 split
+    still carries seven of them (all BAJAJ-AUTO, displaced by its 2024-01-15 hole), so a
+    calibration set built from every window would fit partly on one ticker's private
+    calendar.
+    """
+    per_window = blocks[:, 0]
+    n_tickers = len(np.unique(tickers))
+    keep = np.zeros(len(per_window), dtype=bool)
+    for b in np.unique(per_window):
+        sel = per_window == b
+        if len(np.unique(tickers[sel])) >= n_tickers / 2:
+            keep |= sel
+    return keep
+
+
 def conformal_comparison(obs, ens_by_model, history, terciles, blocks) -> dict:
-    """Fit on the earlier half of the date blocks, evaluate on the later half."""
+    """Fit on the earlier half of the date blocks, evaluate on the later half.
+
+    **Exploratory.** The rule pinned in §17d calibrates on the 2024 validation split and
+    never on the test period. This within-test variant is retained because it measures
+    something the pinned analysis does not: how far the residual distribution shifts
+    *inside* the test window, which is exchangeability failure observed directly.
+    """
     uniq = np.unique(blocks[:, 0])
     cal_set = set(uniq[: len(uniq) // 2])
     cal = np.array([b in cal_set for b in blocks[:, 0]])
-    tst = ~cal
-    vol = (history.std(axis=1) / history.mean(axis=1)) * history[:, -1]
+    return _arms(obs, ens_by_model, history, terciles, cal, ~cal, None, "within_test_split")
 
-    kronos = ens_by_model["kronos_zeroshot"]
+
+def preregistered_conformal(cal_npz, tst_npz) -> dict:
+    """The A5 analysis: calibrate on the 2024 val grid, evaluate on the test grid.
+
+    Fixed in writing on 2026-08-06, before either grid ran. Calibration and test come from
+    different files here rather than different halves of one, which is the whole point --
+    the test period is measured, never fitted.
+    """
+    cal_obs, cal_hist = cal_npz["y_close"], cal_npz["history_close"]
+    tst_obs, tst_hist = tst_npz["y_close"], tst_npz["history_close"]
+
+    keep = shared_block_mask(cal_npz["block_ids"], cal_npz["tickers"])
+    cal_models = {
+        k[len("ens__") :]: cal_npz[k][keep] for k in cal_npz.files if k.startswith("ens__")
+    }
+    tst_models = {k[len("ens__") :]: tst_npz[k] for k in tst_npz.files if k.startswith("ens__")}
+
+    shared = sorted(set(cal_models) & set(tst_models))
+    if "kronos_zeroshot" not in shared:
+        raise SystemExit(f"both runs need kronos_zeroshot; shared models were {shared}")
+
+    out = _arms(
+        tst_obs,
+        {m: tst_models[m] for m in shared},
+        tst_hist,
+        tst_npz["atr_tercile"],
+        cal=None,
+        tst=np.ones(len(tst_obs), dtype=bool),
+        cal_source={
+            "obs": cal_obs[keep],
+            "history": cal_hist[keep],
+            "terciles": cal_npz["atr_tercile"][keep],
+            "models": cal_models,
+        },
+        label="preregistered_val_2024",
+    )
+    out["calibration_windows_dropped_as_orphans"] = int((~keep).sum())
+    out["calibration_blocks"] = int(len(np.unique(cal_npz["block_ids"][keep][:, 0])))
+    return out
+
+
+def _arms(obs, ens_by_model, history, terciles, cal, tst, cal_source=None, label="") -> dict:
+    """Shared arm construction, whether calibration comes from a mask or another run."""
+    vol_all = (history.std(axis=1) / history.mean(axis=1)) * history[:, -1]
+
+    if cal_source is None:
+        c_obs, c_hist, c_terc = obs[cal], history[cal], terciles[cal]
+        c_models = {m: e[cal] for m, e in ens_by_model.items()}
+    else:
+        c_obs, c_hist = cal_source["obs"], cal_source["history"]
+        c_terc, c_models = cal_source["terciles"], cal_source["models"]
+    c_vol = (c_hist.std(axis=1) / c_hist.mean(axis=1)) * c_hist[:, -1]
+
+    kronos_c, kronos_t = c_models["kronos_zeroshot"], ens_by_model["kronos_zeroshot"][tst]
     arms: dict[str, tuple] = {}
 
-    lo = np.quantile(kronos[tst], 0.10, axis=-1, method="weibull")
-    hi = np.quantile(kronos[tst], 0.90, axis=-1, method="weibull")
+    lo = np.quantile(kronos_t, 0.10, axis=-1, method="weibull")
+    hi = np.quantile(kronos_t, 0.90, axis=-1, method="weibull")
     arms["raw_kronos"] = (lo, hi)
 
-    arms["marginal_conformal"] = apply_scale(
-        kronos[tst], fit_scale(obs[cal], kronos[cal], LEVEL), LEVEL
-    )
+    arms["marginal_conformal"] = apply_scale(kronos_t, fit_scale(c_obs, kronos_c, LEVEL), LEVEL)
     arms["normalized_lookback_vol"] = apply_scale(
-        kronos[tst],
-        fit_scale(obs[cal], kronos[cal], LEVEL, normalizer=vol[cal]),
+        kronos_t,
+        fit_scale(c_obs, kronos_c, LEVEL, normalizer=c_vol),
         LEVEL,
-        normalizer=vol[tst],
+        normalizer=vol_all[tst],
     )
     arms["mondrian"] = apply_mondrian(
-        kronos[tst], fit_mondrian(obs[cal], kronos[cal], terciles[cal], LEVEL), terciles[tst], LEVEL
+        kronos_t, fit_mondrian(c_obs, kronos_c, c_terc, LEVEL), terciles[tst], LEVEL
     )
-    rw = ens_by_model["random_walk_drift"]
-    arms["conformalized_rw_drift"] = apply_scale(
-        rw[tst], fit_scale(obs[cal], rw[cal], LEVEL), LEVEL
-    )
+    if "random_walk_drift" in c_models:
+        arms["conformalized_rw_drift"] = apply_scale(
+            ens_by_model["random_walk_drift"][tst],
+            fit_scale(c_obs, c_models["random_walk_drift"], LEVEL),
+            LEVEL,
+        )
 
     out = {
-        "n_calibration_windows": int(cal.sum()),
+        "design": label,
+        "n_calibration_windows": int(len(c_obs)),
         "n_test_windows": int(tst.sum()),
-        "calibration_windows_per_stratum": [int((terciles[cal] == t).sum()) for t in (0, 1, 2)],
+        "calibration_windows_per_stratum": [int((c_terc == t).sum()) for t in (0, 1, 2)],
         "arms": {},
     }
     for name, (lo, hi) in arms.items():
@@ -157,7 +235,17 @@ def conformal_comparison(obs, ens_by_model, history, terciles, blocks) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("run_dir", type=Path)
+    ap.add_argument("run_dir", type=Path, help="the TEST-split run to evaluate")
+    ap.add_argument(
+        "--calibration-run",
+        type=Path,
+        default=None,
+        help=(
+            "a val-split run to calibrate on. With it, the conformal section is the "
+            "pre-registered A5 analysis (section 17d); without it, an exploratory "
+            "within-test split."
+        ),
+    )
     args = ap.parse_args()
 
     npz = args.run_dir / "ensembles.npz"
@@ -181,6 +269,17 @@ def main() -> int:
         "dispersion": dispersion_by_horizon(obs, models["kronos_zeroshot"], history, terciles),
         "conformal": conformal_comparison(obs, models, history, terciles, blocks),
     }
+
+    if args.calibration_run:
+        cal_npz = args.calibration_run / "ensembles.npz"
+        if not cal_npz.exists():
+            print(f"no ensembles.npz in {args.calibration_run}")
+            return 1
+        payload["run"] = "A5_preregistered_conformal"
+        payload["calibration_run"] = args.calibration_run.name
+        payload["conformal_preregistered"] = preregistered_conformal(
+            np.load(cal_npz, allow_pickle=True), d
+        )
     # filename is not optional here. Without it write_results defaults to results.json
     # and this offline pass silently destroys the measurement it was run to analyse --
     # which is what happened to run 20260803T095254Z_397dbc9, whose grid metrics were
