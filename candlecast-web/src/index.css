@@ -1,0 +1,146 @@
+/* A single dark surface: this is a chart-first screen and a light ground would fight the
+   cone's translucency. Committed to one theme deliberately rather than half-supporting two. */
+:root {
+  --ground: #0d1b1e;
+  --panel: #11242a;
+  --line: #1c343a;
+  --ink: #e6efee;
+  --muted: #90a8a5;
+  --accent: #4fb0b8;
+  --warn: #c9974a;
+  --ok: #4fb0b8;
+  --radius: 10px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* header ------------------------------------------------------------------ */
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0 14px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.mark {
+  width: 12px; height: 26px; flex: none; border-radius: 3px;
+  background: linear-gradient(180deg, var(--accent), transparent 85%);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+h1 { font-size: 19px; font-weight: 650; margin: 0; letter-spacing: -0.01em; }
+.sub { margin: 0; font-size: 12.5px; color: var(--muted); }
+
+.picker select {
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 9px 12px;
+  font-size: 15px;
+  min-width: 150px;
+}
+.picker select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* chart ------------------------------------------------------------------- */
+main { flex: 1; padding: 18px 0 8px; }
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px;
+}
+.chart { height: 380px; width: 100%; }
+
+/* readout ----------------------------------------------------------------- */
+.readout { margin-top: 18px; display: grid; gap: 16px; }
+.stat dt { font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
+.stat dd {
+  margin: 0;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.delta { font-size: 14px; color: var(--muted); }
+.dash { color: var(--muted); margin: 0 10px; }
+.note { font-size: 13px; color: var(--muted); font-variant-numeric: normal; }
+
+.badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.badge {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 11px;
+  font-size: 12.5px;
+  background: var(--panel);
+}
+.badge-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+.badge.ok { border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
+.badge.warn { border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); color: var(--warn); }
+.badge.warn .badge-label { color: color-mix(in srgb, var(--warn) 70%, var(--muted)); }
+
+.fineprint { font-size: 12.5px; color: var(--muted); margin: 0; max-width: 70ch; }
+
+/* states ------------------------------------------------------------------ */
+.loading { color: var(--muted); padding: 40px 0; }
+.problem {
+  border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line));
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  background: var(--panel);
+}
+.problem p { margin: 6px 0 0; font-size: 14px; color: var(--muted); }
+.hint { font-size: 13px; }
+
+/* disclaimer -------------------------------------------------------------- */
+.disclaimer {
+  position: sticky;
+  bottom: 0;
+  margin-top: 20px;
+  padding: 11px 0 calc(11px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--ground);
+  color: var(--muted);
+  font-size: 12.5px;
+  text-align: center;
+}
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .chart { height: 300px; }
+  .stat dd { font-size: 19px; }
+  .bar { padding-top: 14px; }
+  .picker select { width: 100%; }
+  .picker { flex: 1 1 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

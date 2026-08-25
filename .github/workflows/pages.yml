@@ -1,0 +1,72 @@
+name: Deploy site
+
+# Runs on any push that changes the app or the data it renders, so a nightly commit
+# redeploys and the site never shows a forecast older than the archive.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "candlecast-web/**"
+      - "site/data/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: candlecast-web/package-lock.json
+
+      - name: Install
+        working-directory: candlecast-web
+        run: npm ci
+
+      # The forecasts live at repo root because the nightly job writes them there and has
+      # no reason to know the site exists. Staging them here keeps that boundary.
+      - name: Stage forecast data into the build
+        run: |
+          set -euo pipefail
+          mkdir -p candlecast-web/public/data
+          cp -r site/data/* candlecast-web/public/data/
+          echo "staged $(ls candlecast-web/public/data/forecasts | wc -l) forecasts"
+
+      - name: Typecheck and build
+        working-directory: candlecast-web
+        run: npm run build
+
+      - name: Fail if the build shipped no data
+        run: |
+          set -euo pipefail
+          count=$(ls candlecast-web/dist/data/forecasts/*.json 2>/dev/null | wc -l)
+          echo "forecasts in dist: $count"
+          test "$count" -gt 0
+          test -f candlecast-web/dist/data/index.json
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: candlecast-web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

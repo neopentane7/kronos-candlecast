@@ -41,3 +41,11 @@ Thumbs.db
 .DS_Store
 .vscode/
 .idea/
+
+# The PWA reads the nightly job's output. It is staged into the build at deploy time
+# rather than committed twice under candlecast-web/.
+candlecast-web/node_modules/
+candlecast-web/dist/
+candlecast-web/public/data/
+candlecast-web/dev-dist/
+candlecast-web/tsconfig.tsbuildinfo
