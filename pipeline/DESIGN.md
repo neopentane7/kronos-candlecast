@@ -39,7 +39,7 @@ That yields a two-tier serving story:
 ACI is not a fallback of convenience here. Its guarantee is asymptotic in the number of
 online updates and requires neither exchangeability nor a minimum calibration set, which
 makes it **the only available method at the levels the theorem forbids**. The Phase A
-decision to use ACI on the serving path (CLAUDE.md B1) is therefore forced by the data
+decision to use ACI on the serving path (plan, milestone B1) is therefore forced by the data
 geometry rather than chosen for operational tidiness — a better sentence for both the
 paper and this document.
 

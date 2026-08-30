@@ -1,7 +1,8 @@
 """A6's two silent-failure modes: a kill rule that never fires, and train/serve skew.
 
 Neither would raise. A kill rule that cannot trigger just lets the run continue, which is
-exactly the "one more epoch" failure CLAUDE.md §6 exists to prevent. A normalisation that
+exactly the "one more epoch" failure the pre-registered kill rule exists to prevent. A
+normalisation that
 differs from inference produces a fine-tune that looks better offline and is worse in
 serving, and nothing in the training log would say so.
 

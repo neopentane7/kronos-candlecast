@@ -1,6 +1,6 @@
 {
   "gamma": 0.005,
-  "provisional": true,
+  "provisional": false,
   "updates": 237015,
   "clamped": 9,
   "alpha_min": 0.001,
@@ -5322,5 +5322,6 @@
     "ZEEL.NS|0.90|7": 0.05649999999999997,
     "ZEEL.NS|0.90|8": 0.06599999999999998,
     "ZEEL.NS|0.90|9": 0.04549999999999996
-  }
+  },
+  "gamma_verified_on": "2026-08-30"
 }

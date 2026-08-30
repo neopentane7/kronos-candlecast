@@ -211,6 +211,7 @@ exactly what the checkpointing was built for.
 
 ## 7. What is deliberately not in the repo
 
-`CLAUDE.md` and `.claude/` are gitignored, as is `data/`. The project's engineering
-constraints are cited inline at each point they are enforced in the code, so the codebase
-is self-describing without them.
+The planning document and local tooling state are gitignored, as is `data/`. The
+project's engineering constraints are cited inline at each point they are enforced in
+the code, and the gates and facts of record are reproduced in the report, so the
+codebase is self-describing without them.

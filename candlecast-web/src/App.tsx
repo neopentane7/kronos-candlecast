@@ -111,7 +111,11 @@ function Readout({ f }: { f: import("./types").Forecast }) {
         <Badge label="engine" value={f.engine} tone={f.metadata.engine_validated ? "ok" : "warn"} />
         <Badge label="50% band" value={f.metadata.band_methods.band_50.replace("_", " ")} tone="ok" />
         <Badge label="80/90% band" value={f.metadata.band_methods.band_80} tone="ok" />
-        {f.metadata.aci_provisional && <Badge label="gamma" value="provisional" tone="warn" />}
+        <Badge
+          label="gamma"
+          value={f.metadata.aci_provisional ? "provisional" : "measured"}
+          tone={f.metadata.aci_provisional ? "warn" : "ok"}
+        />
         {f.backfilled && <Badge label="data" value="backfilled" tone="warn" />}
       </div>
 

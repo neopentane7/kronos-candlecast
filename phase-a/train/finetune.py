@@ -6,7 +6,7 @@ temperature repairs the horizon under-propagation causing it (F9), and that conf
 correction fixes the coverage only by inflating the band 4.6x (F10). The pilot asks the one
 remaining cheap question: does *training* move the defect?
 
-**The bar was fixed on 2026-08-09, before any of this existed** (CLAUDE.md G4). A6 passes on
+**The bar was fixed on 2026-08-09, before any of this existed** (gate G4). A6 passes on
 both of:
 
 1. fair-CRPS **parity** with conformalized rw_drift -- the paired block-bootstrap interval
@@ -72,7 +72,7 @@ class Config:
     grad_clip: float = 3.0
     seed: int = 1234
 
-    # Kill rule, per CLAUDE.md §6. Both are hard stops, not guidance.
+    # Kill rule, per the pre-registered milestone table. Both are hard stops, not guidance.
     kill_epoch: int = 3
     max_hours: float = 8.0
 
@@ -209,7 +209,7 @@ def main() -> int:
         "train_windows": len(train_ds),
         "val_windows": len(val_ds),
         "bar": {
-            "fixed": "2026-08-09, before the pilot existed (CLAUDE.md G4)",
+            "fixed": "2026-08-09, before the pilot existed (gate G4)",
             "condition_1": "fair-CRPS parity with conformalized rw_drift",
             "condition_2": "h=30 dispersion ratio materially above 0.481, curve flattening",
             "kill_rule": f"stop at epoch {cfg.kill_epoch} if val loss has not beaten init, "

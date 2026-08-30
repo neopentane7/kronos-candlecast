@@ -131,8 +131,26 @@ def test_state_round_trips_through_disk(tmp_path):
 def test_missing_state_file_starts_clean_rather_than_crashing(tmp_path):
     s = ACIState.load(tmp_path / "does-not-exist.json")
     assert s.gamma == pytest.approx(DEFAULT_GAMMA)
-    assert s.provisional is True
     assert s.alphas == {}
+    assert s.provisional is True, (
+        "a state that has adapted to nothing has had nothing measured about it; only a "
+        "state checked against realized outcomes may call its gamma measured"
+    )
+
+
+def test_a_verified_state_keeps_its_label_across_a_round_trip(tmp_path):
+    """The label lives in the file, not the constant, so loading must not re-provisionalise.
+
+    The deployed state was checked on 2026-08-30 and records provisional=False. If load()
+    fell back to the module default it would silently relabel a measured gamma as untested
+    on every nightly run.
+    """
+    path = tmp_path / "state.json"
+    s = ACIState()
+    s.provisional = False
+    s.save(path)
+
+    assert ACIState.load(path).provisional is False
 
 
 def test_saved_state_is_sorted_so_diffs_are_readable(tmp_path):

@@ -1038,7 +1038,7 @@ aligned (below).
 
 `exchange_calendars` has **no NSE calendar**; `XNSE` does not exist, so this project uses
 **`XBOM` — the BSE calendar — as a stand-in** (recorded in `common/calendar.py`, still
-unratified in CLAUDE.md). The two exchanges keep near-identical holiday lists but have
+unratified in the plan). The two exchanges keep near-identical holiday lists but have
 diverged on rare dates, and the Diwali Muhurat special sessions are exactly the sort of
 one-off a neighbouring exchange's calendar models imperfectly. That is consistent with
 what the scan found: 7 dates where the whole universe trades and XBOM does not list a
@@ -1275,7 +1275,7 @@ feasibility ceiling looks like from underneath.
 > 4. **ACI is the primary serving method**, not split conformal. This is no longer a
 >    convenience choice: ACI's coverage guarantee is asymptotic in the number of update
 >    steps and requires neither exchangeability nor a minimum calibration set, which is
->    the only guarantee available at this horizon. The serving-path decision in CLAUDE.md
+>    the only guarantee available at this horizon. The serving-path decision in the plan
 >    B1 is thereby **forced by the data geometry**, and that is the finding worth writing.
 > 5. **One grid run serves everything.** A3 verdict, conformal study and A5 all read the
 >    saved `ensembles.npz`. The split rule above is the only remaining researcher degree

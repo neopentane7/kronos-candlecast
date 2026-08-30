@@ -15,7 +15,7 @@ REASON = (
     "No Kronos engine is served. Zero-shot lost the A3 gate by 81% on fair CRPS "
     "(Fact of Record F1) and no temperature arm repaired the horizon under-propagation "
     "that causes it (F9). A checkpoint ships only if the A6 pilot passes the bar fixed "
-    "in CLAUDE.md G4: fair-CRPS parity with conformalized rw_drift, and an h=30 "
+    "by gate G4: fair-CRPS parity with conformalized rw_drift, and an h=30 "
     "dispersion ratio materially above 0.481 with the curve flattening rather than "
     "merely shifting."
 )

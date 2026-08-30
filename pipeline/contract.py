@@ -1,6 +1,6 @@
 """Contract v3 -- the only interface between the nightly job and the site.
 
-**Delta from the v2 frozen in CLAUDE.md**, all of it forced by Phase A's outcome:
+**Delta from the frozen v2 contract**, all of it forced by Phase A's outcome:
 
 * ``model`` + ``model_variant`` -> ``engine``. v2 assumed a Kronos checkpoint with a
   variant label. What ships is an analytic forecaster, and "model: Kronos-small-NSE,
@@ -13,8 +13,10 @@
   distinguishable from forecasts actually made that morning, and burying that in metadata
   invites it being missed.
 * ``metadata`` added: which method produced which band, the ACI gamma, and whether that
-  gamma is provisional. §17d permits a finite-sample guarantee at 50% only, so a response
-  that presents all three bands identically is misleading about two of them.
+  gamma is still provisional. §17d permits a finite-sample guarantee at 50% only, so a
+  response that presents all three bands identically is misleading about two of them.
+  ``aci_provisional`` went false on 2026-08-30, when the served bands were first checked
+  against realized outcomes rather than assumed; the field is unchanged, only its value.
 
 Everything else is v2 unchanged.
 """

@@ -31,7 +31,8 @@ wandb/
 results/**/*.parquet
 results/**/*.npz
 
-# Local agent/harness state and working notes: not part of the published project.
+# Planning documents and local tooling state: working notes, not part of the published
+# project. Every decision they carry is restated where it is enforced.
 .claude/
 CLAUDE.md
 PORTFOLIO.md

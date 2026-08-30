@@ -31,8 +31,16 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# Provisional until the A5 validation grid lands and supplies a fitted value. Recorded in
-# every response's metadata as provisional so nothing downstream mistakes it for tuned.
+# A *new* state starts provisional and stays that way until its bands are checked against
+# realized outcomes -- it has adapted to nothing, so nothing about it has been measured.
+# The label is a property of a particular run of state, not of the constant, so it lives in
+# the persisted file and only the default lives here.
+#
+# The deployed state was checked on 2026-08-30 over the 59-date seeded archive and is
+# recorded as measured: alphas converged to within 0.005 of target at every level
+# (0.4964 / 0.1956 / 0.0955 against 0.50 / 0.20 / 0.10), no alpha on either clamp, and
+# trailing coverage over fully matured dates at 0.5071 / 0.8086 / 0.9078 -- inside a point
+# of nominal at all three. That is metadata, not a bar.
 DEFAULT_GAMMA = 0.005
 PROVISIONAL = True
 
