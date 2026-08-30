@@ -66,6 +66,26 @@ recorded in place with the superseded reasoning intact.
 
 ---
 
+## The harness, on its own
+
+[`kronos-calibrate/`](kronos-calibrate/) is the evaluation machinery packaged so it can be
+pointed at something other than Kronos. It never loads a model; it reads one file of
+sampled forecast paths and returns coverage with block-bootstrap intervals, fair CRPS,
+the horizon decomposition, regime stratification, and a paired comparison against a named
+baseline. It also tells you up front which nominal levels your data can actually certify.
+
+```bash
+uv run python kronos-calibrate/make_example.py        # synthetic, seeded, no corpus needed
+uv run python kronos-calibrate/kronos_calibrate.py kronos-calibrate/example_ensembles.npz --baseline oracle
+```
+
+The example ships three arms whose true calibration is known by construction — one
+correctly specified, one with the horizon under-propagation this study found, one
+degenerate — so the tool can be checked against forecasters whose answers are not in
+doubt before it is trusted on ones that are.
+
+---
+
 ## Reproduce it
 
 The corpus is not committed (back-adjusted prices are rewritten by later corporate actions,
@@ -74,7 +94,7 @@ so a re-fetch produces a different corpus). Everything else is.
 ```bash
 uv sync --all-groups
 ./phase-a/scripts/setup_upstream.ps1        # pinned upstream commit, read-only
-uv run pytest -q                            # 169 tests
+uv run pytest -q                            # 249 tests
 
 # baselines are pure NumPy and must reproduce exactly on any machine
 uv run pytest tests/test_golden.py -q
@@ -117,27 +137,33 @@ Things that turned out to matter more than expected:
 ## Layout
 
 ```
-common/          shared preprocessing, schema, corpus fingerprint, results helpers
+common/            shared preprocessing, schema, corpus fingerprint, results helpers
 phase-a/
-  eval/          harness, metrics, conformal prediction, diagnostics, figures
-  scripts/       data fetch, dataset build, calendar audit, golden regeneration
-  report/        the technical report
-cloud/           Kaggle notebook for the GPU grid
-pipeline/        serving design (Phase B — not yet built)
-results/         <timestamp>_<git-sha>/ per run: metrics, ensembles, figures
-tests/           169 tests
+  eval/            harness, metrics, conformal prediction, diagnostics, figures
+  train/           the bounded fine-tuning pilot, with its kill rule in code
+  scripts/         data fetch, dataset build, calendar audit, golden regeneration
+  report/          the technical report
+kronos-calibrate/  the harness as a standalone tool, pointable at any forecaster
+cloud/             Kaggle notebook for the GPU grid and the pilot
+pipeline/          the nightly forecast job: engines, conformal calibration, archive
+candlecast-web/    the PWA source
+site/              committed forecast JSON the PWA reads
+results/           <timestamp>_<git-sha>/ per run: metrics, ensembles, figures
+tests/             249 tests
 ```
 
 ## Status
 
-| | |
-|---|---|
-| A1 environment, A2 data pipeline | done — 59 tickers, 123,479 bars, 2018-01 → 2026-06 |
-| A3 zero-shot gate | **done — FAIL**, see headline |
-| A4 temperature sweep | harness built, run pending |
-| A5 pre-registered conformal study | needs a validation-split grid |
-| A6 bounded fine-tuning pilot | pending, kill rule fixed in advance |
-| Phase B — nightly job + PWA | not built |
+| milestone | state | note |
+|---|---|---|
+| A1 environment, A2 data pipeline | done | 59 tickers, 123,479 bars, 2018-01 to 2026-06 |
+| A3 zero-shot gate | **FAIL** | see headline |
+| A4 temperature sweep | **FAIL** | no arm reached the 0.85 dispersion bar; widening the cone worsened CRPS monotonically |
+| A5 pre-registered conformal study | done | calibrated on 2024, evaluated on 2025-26; the required correction does not transfer across periods |
+| A6 bounded fine-tuning pilot | built, run pending | one config, kill rule fixed in advance and enforced in code |
+| A7 report + `kronos-calibrate` + upstream comment | report and tool done | the upstream comment is drafted, not posted |
+| B1 nightly forecast job | live | runs in Actions, writes the committed archive |
+| B3 static PWA | live | [neopentane7.github.io/kronos-candlecast](https://neopentane7.github.io/kronos-candlecast/) |
 
 ## Attribution
 

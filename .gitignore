@@ -53,3 +53,8 @@ candlecast-web/tsconfig.tsbuildinfo
 # Staging folder for artifacts pulled off a cloud runner. Everything worth keeping is
 # imported into results/ ; this is a scratch copy and duplicates it.
 results1/
+
+# kronos-calibrate's worked example is generated, not committed: make_example.py is
+# seeded, so the file is reproducible in a second and would otherwise be 4.5 MB of
+# binary in every clone.
+kronos-calibrate/example_ensembles.npz
