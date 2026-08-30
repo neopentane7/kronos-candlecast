@@ -62,3 +62,43 @@ export interface Index {
   skipped: { ticker: string; reason: string }[];
   disclaimer: string;
 }
+
+export interface DayEntry {
+  date: string;
+  coverage: number;
+  rows: number;
+  tickers: number;
+  /** Deepest horizon step resolved on this date. */
+  steps: number;
+  /** True once the full horizon has matured. Only these enter any average. */
+  complete: boolean;
+  live: boolean;
+}
+
+export interface LevelRecord {
+  nominal: number;
+  series: DayEntry[];
+  trailing: {
+    coverage: number;
+    days: number;
+    window: number;
+    excluded_incomplete: number;
+    from: string;
+    to: string;
+  } | null;
+  days: number;
+  live_days: number;
+  cumulative: number | null;
+}
+
+export interface TrackRecord {
+  window: number;
+  unit: string;
+  days: number;
+  live_days: number;
+  first: string | null;
+  last: string | null;
+  note: string;
+  backtest: Record<string, LevelRecord>;
+  live: { date: string; by_level: Record<string, { n: number; hits: number; empirical: number }> }[];
+}

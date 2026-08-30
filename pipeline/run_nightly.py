@@ -34,7 +34,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
 from common.calendar import future_sessions  # noqa: E402
-from pipeline import archive  # noqa: E402
+from pipeline import archive, track_record  # noqa: E402
 from pipeline.aci import ACIState  # noqa: E402
 from pipeline.calibration import build_bands, enforce_monotone, path_probabilities  # noqa: E402
 from pipeline.contract import BandMethods, Forecast, Metadata, Quantiles, RawQuantiles  # noqa: E402
@@ -44,6 +44,10 @@ STATE_DIR = REPO_ROOT / "pipeline" / "state"
 ACI_PATH = STATE_DIR / "aci_state.json"
 SPLIT_PATH = STATE_DIR / "split_conformal.json"
 ARCHIVE_ROOT = REPO_ROOT / "pipeline" / "archive_data"
+# Live outcomes cannot be recomputed: the committed corpus stops months before serving
+# began, so a live scoring day not written down when it happens is gone. State is data
+# (resolved conflict #2), so the ledger is committed alongside the ACI state.
+LIVE_LEDGER = REPO_ROOT / "pipeline" / "state" / "track_record_live.json"
 SITE_DATA = REPO_ROOT / "site" / "data"
 HISTORY_SESSIONS = 120
 IST = "+05:30"
@@ -180,6 +184,8 @@ def score_and_update(aci_state: ACIState, target_date: str, realized: dict[str, 
         hits = (grp["lo"] <= actual) & (actual <= grp["hi"])
         per_level[f"{float(lvl):.2f}"] = {
             "n": int(len(grp)),
+            "hits": int(hits.sum()),
+            "tickers": int(grp["ticker"].nunique()),
             "empirical": round(float(hits.mean()), 4),
             "nominal": float(lvl),
         }
@@ -306,11 +312,33 @@ def run(as_of: str | None, limit: int | None, seed: int, backfilled: bool) -> di
         "split_conformal_50": split_scale,
         "wall_seconds": round(time.perf_counter() - t0, 1),
     }
+    if not backfilled and scoring.get("by_level"):
+        ledger = track_record.append_live_day(LIVE_LEDGER, forecast_date, scoring["by_level"])
+        LIVE_LEDGER.parent.mkdir(parents=True, exist_ok=True)
+        LIVE_LEDGER.write_text(json.dumps(ledger, indent=2) + "\n", encoding="utf-8")
+        publish_track_record()
+
     write_site_data(forecasts, used_bars, summary)
     (SITE_DATA / "run_summary.json").write_text(
         json.dumps(summary, indent=2) + "\n", encoding="utf-8"
     )
     return summary
+
+
+def publish_track_record() -> None:
+    """Fold the live ledger into the published payload, leaving the backtest half alone.
+
+    The backtest series is rebuilt by pipeline/build_track_record.py, which needs the
+    corpus. The Actions runner has no corpus, so this must never regenerate that half:
+    doing so would erase it on the first nightly run.
+    """
+    path = SITE_DATA / "track_record.json"
+    payload = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    ledger = json.loads(LIVE_LEDGER.read_text(encoding="utf-8")) if LIVE_LEDGER.exists() else {}
+    payload["live"] = ledger.get("days", [])
+    payload["generated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
 def _live_universe() -> list[str]:

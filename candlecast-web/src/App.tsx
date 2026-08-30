@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchForecast, fetchHistory, fetchIndex } from "./api";
+import { fetchForecast, fetchHistory, fetchIndex, fetchTrackRecord } from "./api";
 import { Cone } from "./components/Cone";
+import { TrackRecord } from "./components/TrackRecord";
 
 const DEFAULT = "RELIANCE.NS";
 
@@ -19,6 +20,10 @@ export default function App() {
     queryFn: () => fetchHistory(ticker),
     enabled: !!ticker,
   });
+
+  // Site-wide, not per-ticker: coverage is a property of the engine, and slicing it by
+  // ticker would put one name's 20 days where 60 names' 20 days belong.
+  const track = useQuery({ queryKey: ["track"], queryFn: fetchTrackRecord, retry: false });
 
   const f = forecast.data;
   const tickers = index.data?.tickers ?? [];
@@ -62,6 +67,7 @@ export default function App() {
               <Cone history={history.data.sessions} forecast={f} />
             </section>
             <Readout f={f} />
+            {track.data && <TrackRecord tr={track.data} />}
           </>
         ) : (
           !forecast.isError && <p className="loading">Loading {ticker.replace(".NS", "")}…</p>

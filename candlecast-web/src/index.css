@@ -144,3 +144,77 @@ main { flex: 1; padding: 18px 0 8px; }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* ---- track record -------------------------------------------------------
+   Reads as a measurement panel, not a scorecard: the sparkline carries the
+   shape, the gap in percentage points carries the verdict, and the day count
+   sits beside every figure so the denominator is never implicit. */
+.track {
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.track-head h2 { font-size: 15px; margin: 0 0 6px; letter-spacing: 0.01em; }
+.track-head p { font-size: 12.5px; color: var(--muted); margin: 0 0 18px; max-width: 66ch; }
+
+.track-rows { display: grid; gap: 14px; }
+.track-row {
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr) 118px;
+  gap: 0 16px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--muted);
+  border-radius: var(--radius);
+}
+.track-row.on   { border-left-color: var(--ok); }
+.track-row.near { border-left-color: color-mix(in srgb, var(--warn) 60%, var(--line)); }
+.track-row.off  { border-left-color: var(--warn); }
+
+.track-label { display: flex; flex-direction: column; gap: 2px; }
+.track-nominal { font-size: 13px; font-weight: 600; }
+.track-verdict { font-size: 11px; color: var(--muted); }
+.track-row.off .track-verdict { color: var(--warn); }
+
+.track-figures { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+.track-actual { font-size: 17px; font-variant-numeric: tabular-nums; }
+.track-gap { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.track-row.off .track-gap { color: var(--warn); }
+.track-days { font-size: 10.5px; color: var(--muted); }
+
+.spark { width: 100%; height: 40px; overflow: visible; }
+.spark-nominal {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.55;
+  vector-effect: non-scaling-stroke;
+}
+.spark-all {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1;
+  opacity: 0.4;
+  vector-effect: non-scaling-stroke;
+}
+.spark-recent {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+}
+.track-row.off .spark-recent { stroke: var(--warn); }
+.spark-end { fill: var(--accent); }
+.track-row.off .spark-end { fill: var(--warn); }
+.spark-empty { font-size: 11.5px; color: var(--muted); }
+
+.track-note { font-size: 12px; color: var(--muted); margin: 14px 0 0; max-width: 72ch; }
+
+@media (max-width: 620px) {
+  .track-row { grid-template-columns: 1fr 100px; grid-template-areas: "label figures" "spark spark"; }
+  .track-label { grid-area: label; }
+  .track-figures { grid-area: figures; }
+  .spark { grid-area: spark; margin-top: 8px; }
+}

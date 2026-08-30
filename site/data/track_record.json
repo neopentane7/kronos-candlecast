@@ -1,0 +1,1653 @@
+{
+  "window": 20,
+  "unit": "forecast date",
+  "days": 59,
+  "live_days": 0,
+  "first": "2026-04-01",
+  "last": "2026-06-29",
+  "note": "One forecast date is one observation. Coverage is the mean over dates, and the headline figure is a trailing window: ACI adapts online, so a cumulative mean blends the cold-start transient into the steady state and can read near-nominal by cancellation.",
+  "backtest": {
+    "0.50": {
+      "nominal": 0.5,
+      "series": [
+        {
+          "date": "2026-04-01",
+          "coverage": 0.1972,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-02",
+          "coverage": 0.2,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-06",
+          "coverage": 0.2475,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-07",
+          "coverage": 0.2571,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-08",
+          "coverage": 0.4407,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-09",
+          "coverage": 0.422,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-10",
+          "coverage": 0.4407,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-13",
+          "coverage": 0.3994,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-15",
+          "coverage": 0.4678,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-16",
+          "coverage": 0.4492,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-17",
+          "coverage": 0.4723,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-20",
+          "coverage": 0.4593,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-21",
+          "coverage": 0.4322,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-22",
+          "coverage": 0.4446,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-23",
+          "coverage": 0.4944,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-24",
+          "coverage": 0.5023,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-27",
+          "coverage": 0.4797,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-28",
+          "coverage": 0.4791,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-29",
+          "coverage": 0.491,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-30",
+          "coverage": 0.5271,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-04",
+          "coverage": 0.5294,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-05",
+          "coverage": 0.4977,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-06",
+          "coverage": 0.4831,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-07",
+          "coverage": 0.4814,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-08",
+          "coverage": 0.5333,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-11",
+          "coverage": 0.5424,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-12",
+          "coverage": 0.5655,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-13",
+          "coverage": 0.5768,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-14",
+          "coverage": 0.5955,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-15",
+          "coverage": 0.5542,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-18",
+          "coverage": 0.5283,
+          "rows": 1711,
+          "tickers": 59,
+          "steps": 29,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-19",
+          "coverage": 0.5375,
+          "rows": 1652,
+          "tickers": 59,
+          "steps": 28,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-20",
+          "coverage": 0.5499,
+          "rows": 1593,
+          "tickers": 59,
+          "steps": 27,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-21",
+          "coverage": 0.5541,
+          "rows": 1534,
+          "tickers": 59,
+          "steps": 26,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-22",
+          "coverage": 0.5729,
+          "rows": 1475,
+          "tickers": 59,
+          "steps": 25,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-25",
+          "coverage": 0.5975,
+          "rows": 1416,
+          "tickers": 59,
+          "steps": 24,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-26",
+          "coverage": 0.5829,
+          "rows": 1357,
+          "tickers": 59,
+          "steps": 23,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-27",
+          "coverage": 0.5008,
+          "rows": 1298,
+          "tickers": 59,
+          "steps": 22,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-29",
+          "coverage": 0.5803,
+          "rows": 1239,
+          "tickers": 59,
+          "steps": 21,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-01",
+          "coverage": 0.5263,
+          "rows": 1180,
+          "tickers": 59,
+          "steps": 20,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-02",
+          "coverage": 0.5103,
+          "rows": 1121,
+          "tickers": 59,
+          "steps": 19,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-03",
+          "coverage": 0.5179,
+          "rows": 1062,
+          "tickers": 59,
+          "steps": 18,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-04",
+          "coverage": 0.4995,
+          "rows": 1003,
+          "tickers": 59,
+          "steps": 17,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-05",
+          "coverage": 0.4947,
+          "rows": 944,
+          "tickers": 59,
+          "steps": 16,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-08",
+          "coverage": 0.4463,
+          "rows": 885,
+          "tickers": 59,
+          "steps": 15,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-09",
+          "coverage": 0.5,
+          "rows": 826,
+          "tickers": 59,
+          "steps": 14,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-10",
+          "coverage": 0.4668,
+          "rows": 767,
+          "tickers": 59,
+          "steps": 13,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-11",
+          "coverage": 0.4096,
+          "rows": 708,
+          "tickers": 59,
+          "steps": 12,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-12",
+          "coverage": 0.584,
+          "rows": 649,
+          "tickers": 59,
+          "steps": 11,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-15",
+          "coverage": 0.6814,
+          "rows": 590,
+          "tickers": 59,
+          "steps": 10,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-16",
+          "coverage": 0.6667,
+          "rows": 531,
+          "tickers": 59,
+          "steps": 9,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-17",
+          "coverage": 0.6504,
+          "rows": 472,
+          "tickers": 59,
+          "steps": 8,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-18",
+          "coverage": 0.5932,
+          "rows": 413,
+          "tickers": 59,
+          "steps": 7,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-19",
+          "coverage": 0.5847,
+          "rows": 354,
+          "tickers": 59,
+          "steps": 6,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-22",
+          "coverage": 0.5322,
+          "rows": 295,
+          "tickers": 59,
+          "steps": 5,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-23",
+          "coverage": 0.5339,
+          "rows": 236,
+          "tickers": 59,
+          "steps": 4,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-24",
+          "coverage": 0.5932,
+          "rows": 177,
+          "tickers": 59,
+          "steps": 3,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-25",
+          "coverage": 0.5085,
+          "rows": 118,
+          "tickers": 59,
+          "steps": 2,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-29",
+          "coverage": 0.5763,
+          "rows": 59,
+          "tickers": 59,
+          "steps": 1,
+          "complete": false,
+          "live": false
+        }
+      ],
+      "trailing": {
+        "coverage": 0.5071,
+        "days": 20,
+        "window": 20,
+        "excluded_incomplete": 29,
+        "from": "2026-04-17",
+        "to": "2026-05-15"
+      },
+      "days": 59,
+      "live_days": 0,
+      "cumulative": 0.4554
+    },
+    "0.80": {
+      "nominal": 0.8,
+      "series": [
+        {
+          "date": "2026-04-01",
+          "coverage": 0.4949,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-02",
+          "coverage": 0.4514,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-06",
+          "coverage": 0.509,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-07",
+          "coverage": 0.5153,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-08",
+          "coverage": 0.7119,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-09",
+          "coverage": 0.7023,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-10",
+          "coverage": 0.748,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-13",
+          "coverage": 0.6836,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-15",
+          "coverage": 0.7559,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-16",
+          "coverage": 0.7333,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-17",
+          "coverage": 0.7774,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-20",
+          "coverage": 0.7729,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-21",
+          "coverage": 0.7401,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-22",
+          "coverage": 0.7514,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-23",
+          "coverage": 0.7938,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-24",
+          "coverage": 0.7932,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-27",
+          "coverage": 0.822,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-28",
+          "coverage": 0.7972,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-29",
+          "coverage": 0.8006,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-30",
+          "coverage": 0.7701,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-04",
+          "coverage": 0.7972,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-05",
+          "coverage": 0.7791,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-06",
+          "coverage": 0.8045,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-07",
+          "coverage": 0.8107,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-08",
+          "coverage": 0.8107,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-11",
+          "coverage": 0.8644,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-12",
+          "coverage": 0.8537,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-13",
+          "coverage": 0.8757,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-14",
+          "coverage": 0.8825,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-15",
+          "coverage": 0.874,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-18",
+          "coverage": 0.8632,
+          "rows": 1711,
+          "tickers": 59,
+          "steps": 29,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-19",
+          "coverage": 0.868,
+          "rows": 1652,
+          "tickers": 59,
+          "steps": 28,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-20",
+          "coverage": 0.8613,
+          "rows": 1593,
+          "tickers": 59,
+          "steps": 27,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-21",
+          "coverage": 0.8559,
+          "rows": 1534,
+          "tickers": 59,
+          "steps": 26,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-22",
+          "coverage": 0.8692,
+          "rows": 1475,
+          "tickers": 59,
+          "steps": 25,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-25",
+          "coverage": 0.8531,
+          "rows": 1416,
+          "tickers": 59,
+          "steps": 24,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-26",
+          "coverage": 0.8497,
+          "rows": 1357,
+          "tickers": 59,
+          "steps": 23,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-27",
+          "coverage": 0.7943,
+          "rows": 1298,
+          "tickers": 59,
+          "steps": 22,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-29",
+          "coverage": 0.8604,
+          "rows": 1239,
+          "tickers": 59,
+          "steps": 21,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-01",
+          "coverage": 0.8407,
+          "rows": 1180,
+          "tickers": 59,
+          "steps": 20,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-02",
+          "coverage": 0.785,
+          "rows": 1121,
+          "tickers": 59,
+          "steps": 19,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-03",
+          "coverage": 0.8258,
+          "rows": 1062,
+          "tickers": 59,
+          "steps": 18,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-04",
+          "coverage": 0.8245,
+          "rows": 1003,
+          "tickers": 59,
+          "steps": 17,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-05",
+          "coverage": 0.8284,
+          "rows": 944,
+          "tickers": 59,
+          "steps": 16,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-08",
+          "coverage": 0.7853,
+          "rows": 885,
+          "tickers": 59,
+          "steps": 15,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-09",
+          "coverage": 0.8063,
+          "rows": 826,
+          "tickers": 59,
+          "steps": 14,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-10",
+          "coverage": 0.7862,
+          "rows": 767,
+          "tickers": 59,
+          "steps": 13,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-11",
+          "coverage": 0.7105,
+          "rows": 708,
+          "tickers": 59,
+          "steps": 12,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-12",
+          "coverage": 0.8844,
+          "rows": 649,
+          "tickers": 59,
+          "steps": 11,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-15",
+          "coverage": 0.9271,
+          "rows": 590,
+          "tickers": 59,
+          "steps": 10,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-16",
+          "coverage": 0.951,
+          "rows": 531,
+          "tickers": 59,
+          "steps": 9,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-17",
+          "coverage": 0.9131,
+          "rows": 472,
+          "tickers": 59,
+          "steps": 8,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-18",
+          "coverage": 0.8862,
+          "rows": 413,
+          "tickers": 59,
+          "steps": 7,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-19",
+          "coverage": 0.8955,
+          "rows": 354,
+          "tickers": 59,
+          "steps": 6,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-22",
+          "coverage": 0.8475,
+          "rows": 295,
+          "tickers": 59,
+          "steps": 5,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-23",
+          "coverage": 0.8644,
+          "rows": 236,
+          "tickers": 59,
+          "steps": 4,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-24",
+          "coverage": 0.8757,
+          "rows": 177,
+          "tickers": 59,
+          "steps": 3,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-25",
+          "coverage": 0.8475,
+          "rows": 118,
+          "tickers": 59,
+          "steps": 2,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-29",
+          "coverage": 0.8305,
+          "rows": 59,
+          "tickers": 59,
+          "steps": 1,
+          "complete": false,
+          "live": false
+        }
+      ],
+      "trailing": {
+        "coverage": 0.8086,
+        "days": 20,
+        "window": 20,
+        "excluded_incomplete": 29,
+        "from": "2026-04-17",
+        "to": "2026-05-15"
+      },
+      "days": 59,
+      "live_days": 0,
+      "cumulative": 0.7492
+    },
+    "0.90": {
+      "nominal": 0.9,
+      "series": [
+        {
+          "date": "2026-04-01",
+          "coverage": 0.6576,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-02",
+          "coverage": 0.6158,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-06",
+          "coverage": 0.6593,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-07",
+          "coverage": 0.6542,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-08",
+          "coverage": 0.8345,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-09",
+          "coverage": 0.8249,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-10",
+          "coverage": 0.8537,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-13",
+          "coverage": 0.7949,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-15",
+          "coverage": 0.8616,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-16",
+          "coverage": 0.8395,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-17",
+          "coverage": 0.874,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-20",
+          "coverage": 0.8667,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-21",
+          "coverage": 0.8508,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-22",
+          "coverage": 0.8712,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-23",
+          "coverage": 0.9006,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-24",
+          "coverage": 0.8949,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-27",
+          "coverage": 0.9164,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-28",
+          "coverage": 0.9119,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-29",
+          "coverage": 0.922,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-04-30",
+          "coverage": 0.8944,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-04",
+          "coverage": 0.9,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-05",
+          "coverage": 0.8836,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-06",
+          "coverage": 0.9299,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-07",
+          "coverage": 0.9181,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-08",
+          "coverage": 0.9119,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-11",
+          "coverage": 0.9441,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-12",
+          "coverage": 0.9345,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-13",
+          "coverage": 0.9441,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-14",
+          "coverage": 0.9412,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-15",
+          "coverage": 0.9452,
+          "rows": 1770,
+          "tickers": 59,
+          "steps": 30,
+          "complete": true,
+          "live": false
+        },
+        {
+          "date": "2026-05-18",
+          "coverage": 0.9398,
+          "rows": 1711,
+          "tickers": 59,
+          "steps": 29,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-19",
+          "coverage": 0.9425,
+          "rows": 1652,
+          "tickers": 59,
+          "steps": 28,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-20",
+          "coverage": 0.9391,
+          "rows": 1593,
+          "tickers": 59,
+          "steps": 27,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-21",
+          "coverage": 0.9361,
+          "rows": 1534,
+          "tickers": 59,
+          "steps": 26,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-22",
+          "coverage": 0.9342,
+          "rows": 1475,
+          "tickers": 59,
+          "steps": 25,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-25",
+          "coverage": 0.9216,
+          "rows": 1416,
+          "tickers": 59,
+          "steps": 24,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-26",
+          "coverage": 0.9197,
+          "rows": 1357,
+          "tickers": 59,
+          "steps": 23,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-27",
+          "coverage": 0.8891,
+          "rows": 1298,
+          "tickers": 59,
+          "steps": 22,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-05-29",
+          "coverage": 0.9338,
+          "rows": 1239,
+          "tickers": 59,
+          "steps": 21,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-01",
+          "coverage": 0.928,
+          "rows": 1180,
+          "tickers": 59,
+          "steps": 20,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-02",
+          "coverage": 0.8787,
+          "rows": 1121,
+          "tickers": 59,
+          "steps": 19,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-03",
+          "coverage": 0.9068,
+          "rows": 1062,
+          "tickers": 59,
+          "steps": 18,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-04",
+          "coverage": 0.9053,
+          "rows": 1003,
+          "tickers": 59,
+          "steps": 17,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-05",
+          "coverage": 0.9195,
+          "rows": 944,
+          "tickers": 59,
+          "steps": 16,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-08",
+          "coverage": 0.8881,
+          "rows": 885,
+          "tickers": 59,
+          "steps": 15,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-09",
+          "coverage": 0.9056,
+          "rows": 826,
+          "tickers": 59,
+          "steps": 14,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-10",
+          "coverage": 0.9074,
+          "rows": 767,
+          "tickers": 59,
+          "steps": 13,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-11",
+          "coverage": 0.8319,
+          "rows": 708,
+          "tickers": 59,
+          "steps": 12,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-12",
+          "coverage": 0.9584,
+          "rows": 649,
+          "tickers": 59,
+          "steps": 11,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-15",
+          "coverage": 0.9729,
+          "rows": 590,
+          "tickers": 59,
+          "steps": 10,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-16",
+          "coverage": 0.9774,
+          "rows": 531,
+          "tickers": 59,
+          "steps": 9,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-17",
+          "coverage": 0.9619,
+          "rows": 472,
+          "tickers": 59,
+          "steps": 8,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-18",
+          "coverage": 0.9419,
+          "rows": 413,
+          "tickers": 59,
+          "steps": 7,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-19",
+          "coverage": 0.9576,
+          "rows": 354,
+          "tickers": 59,
+          "steps": 6,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-22",
+          "coverage": 0.939,
+          "rows": 295,
+          "tickers": 59,
+          "steps": 5,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-23",
+          "coverage": 0.9407,
+          "rows": 236,
+          "tickers": 59,
+          "steps": 4,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-24",
+          "coverage": 0.9266,
+          "rows": 177,
+          "tickers": 59,
+          "steps": 3,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-25",
+          "coverage": 0.9322,
+          "rows": 118,
+          "tickers": 59,
+          "steps": 2,
+          "complete": false,
+          "live": false
+        },
+        {
+          "date": "2026-06-29",
+          "coverage": 0.8644,
+          "rows": 59,
+          "tickers": 59,
+          "steps": 1,
+          "complete": false,
+          "live": false
+        }
+      ],
+      "trailing": {
+        "coverage": 0.9078,
+        "days": 20,
+        "window": 20,
+        "excluded_incomplete": 29,
+        "from": "2026-04-17",
+        "to": "2026-05-15"
+      },
+      "days": 59,
+      "live_days": 0,
+      "cumulative": 0.8584
+    }
+  },
+  "live": []
+}
