@@ -300,6 +300,10 @@ The discriminating signature is **monotonicity** — location bias makes the rat
 with nominal level. The sequence (0.4307, 0.4234, 0.4411) is **non-monotone**, i.e. noise
 around a constant, now measured on the full grid rather than a 45-window probe.
 
+> **The mixture left open here is resolved in §20a**, by measurements this section did
+> not have: A5 shows the scale component is real and recoverable, and the location
+> component is real, per-window, and moving between periods.
+
 ## 7. Regime dependence — CORRECTED
 
 > **The preliminary conclusion in this section was wrong, and it was wrong in the direction
@@ -698,6 +702,10 @@ the only discriminating comparison, and it is not close. Note also that **raw Kr
 already the narrowest arm in the table (0.53× the null)** while covering 0.413. A band that
 narrow and that wrong is not under-dispersed; it is misplaced, which is §8's location error
 seen from the calibration side.
+
+That reads against §6's "uniformly too tight by 2.32×", and the two are reconciled in
+**§20a**: §6's test was explicitly one-sided and left the bias-plus-scale mixture open,
+which is exactly what this section and F11 close.
 
 ### Why the Kronos arms overshoot, and the null does not
 
@@ -1428,46 +1436,145 @@ line · re-read for tone, no implication their evaluation was careless · verify
 
 ## 20. Caveats
 
-- Zero-shot results are **45 windows over 12 blocks**; tercile slices have 15 each. Every
-  interval is wide.
-- The regime finding is the most valuable **and** the most sample-hungry. It needs the full
-  grid before it can carry weight.
-- All runs to date are subsamples and several executed from a dirty tree (recorded in the
-  directory name). **None is the A3 acceptance artifact**, which must be the full 708-window
-  grid from a clean tree.
-- Terciles are cut within each subsample, so boundaries are not comparable across runs.
-- The universe fix for survivorship is an approximation, not a point-in-time
-  reconstruction; `point_in_time: false` is recorded in the manifest and must be disclosed
-  wherever coverage is published.
+The zero-shot verdict is a full-grid measurement: 708 windows, 59 tickers, 12 independent
+forecast dates, run `20260808T161433Z_d6602cd` from a clean tree. What follows is what
+remains true of it.
+
+> **Correction to this section.** Until 2026-08-30 this section described the zero-shot
+> results as "45 windows over 12 blocks" and stated that no run yet was the A3 acceptance
+> artifact. Both were written before the full grid ran on 2026-08-08 and neither survived
+> it. The superseded text is retained in git history; the sentences are not restated here
+> because they are simply false now. §5 is the acceptance result.
+
+**The denominator is 12, not 708.** Fifty-nine tickers priced on one date share a market
+and thirty horizon steps share a path, so the effective sample size for any coverage figure
+is the number of distinct forecast start dates. Every interval in this report is a block
+bootstrap over those dates, and the block count travels with the number. A coverage figure
+quoted against n = 708 would be wrong by a factor of 59 in the direction that flatters.
+
+**The 80% conformal result carries no finite-sample guarantee.** The pre-registered design
+has 8 shared calibration blocks against §17d's floor of 9 (F12). The coverage numbers in
+§12b are honest empirical measurements; the *guarantee* is absent, and no arrangement of
+this corpus supplies one. 50% is the only level this geometry can certify, which is why the
+serving path carries split conformal there and ACI above it.
+
+**The universe is not point-in-time.** The survivorship fix is an approximation, not a
+reconstruction. `point_in_time: false` is recorded in the manifest and must be disclosed
+wherever coverage is published.
+
+**Terciles are cut within each run.** Boundaries are therefore not comparable across runs,
+and a stratified figure from one run must not be read against a stratified figure from
+another.
+
+**The A4 panel is 60 windows, not the grid.** Its arms are internally comparable — the
+panel is block-balanced and identical across temperatures, and T = 1.0 was re-run inside it
+rather than carried over — but its *levels* are not comparable to §5's grid rows. Different
+windows give a different level.
+
+**The calendar is a neighbour's.** No NSE calendar exists in `exchange_calendars`; `XBOM`
+stands in, with authority over future sessions only, where no prices exist to appeal to.
+Constraint 5 fixes the ordering: majority-of-universe primary, XBOM advisory.
+
+**Nothing here measures a fine-tuned Kronos.** Every Kronos number in this report is
+zero-shot. A6 is built and its bar was fixed on 2026-08-09, but it has not run, so no claim
+about what fine-tuning would or would not fix is supported by measurement.
+
+**One model, one size, one lookback, one horizon.** Kronos-small at `lookback = 400` on
+daily bars at h = 30. Kronos-base, intraday horizons and alternative lookbacks are
+out of scope (§5 of the plan), so the results are a statement about this configuration and
+not about the model family.
+
+## 20a. Two framings, reconciled
+
+§6 characterises the miscalibration as shape-correct and scale-wrong — uniformly too tight
+by 2.32× (F3). §12b characterises raw Kronos as **misplaced, not under-dispersed** (F10).
+Side by side those read as two different diagnoses, and a reader is entitled to ask which
+one this report believes.
+
+**They are the same diagnosis measured twice, and the second measurement resolves an
+ambiguity the first one declared.**
+
+§6 says so itself, in the subsection headed *the test is one-sided*: a flat z-ratio
+**rejects bias-dominated error** but cannot exclude a bias-plus-scale mixture. Its own
+table names the counterexample — random-sign bias 0.75 combined with scale 0.75 reads flat
+at spread 0.014 and is marked *also consistent — not excluded*. So F3 never claimed pure
+scale error. It claimed *not bias-dominated*, with the mixture explicitly left open, and
+the mixture is what A5 closes, from both sides:
+
+- **The scale component is real and recoverable.** Conformal reaches nominal coverage by
+  inflating the band 4.6× (0.0927 → 0.4291). You cannot scale your way to nominal coverage
+  unless the width was genuinely deficient, so the 2.32× in F3 is measuring something that
+  exists.
+- **The location component is real, per-window, and non-stationary.** Raw Kronos is the
+  *narrowest* arm in §12b — 0.53× the null's width — while covering 0.413. Width that small
+  at coverage that wrong is misplacement, not deficiency. And F11 measures the movement
+  directly: the correction 2024 requires over-corrects on 2025–26 by **+0.1715**, against
+  the null's +0.0502 on the same boundary.
+
+The forecaster is **too tight and mislocated, and the mislocation moves between periods.**
+F3 measured the first component and was careful to say it could not separate the second;
+F10 and F11 separated it.
+
+This is not bookkeeping. A pure scale error is fixable once, offline, by a constant — which
+is precisely why §6 concluded that "a uniform per-horizon scale correction is exactly what
+split conformal produces" and why the conformal layer was worth testing at all. A *moving*
+location error is not fixable that way, and F11 is the mechanism behind the headline result
+of §12b: every conformalized Kronos arm overshoots to ~0.92 because the calibration layer
+is correcting for a displacement that has already changed by the time it is applied. The
+conformal study did not fail to answer §6's question. It answered it, and the answer
+disqualified the instrument §6 was pointing at.
 
 ## 21. Open questions
 
 | # | Question | Status |
 |---|---|---|
-| 1 | Does the constant z-ratio hold on the full grid and after fine-tuning? | open — check `monotone_increasing` |
-| 2 | Does the regime spread survive conformalization? | answered in simulation; unconfirmed on real data |
-| 3 | Is the h^0.639 exponent stable across regimes and tickers? | open |
-| 4 | What is the random walk's exponent? | **answered: 0.4983** |
-| 5 | Is under-dispersion partly an artifact of window normalisation? | **open, most consequential** |
-| 6 | Does the `top_p=1.0` CRPS worsening indicate junk mass in the untruncated tail? | open |
-| 7 | Do published TSFM calibration studies state `m` and the estimator? | open — the contribution hinges on this |
+| 1 | Does the constant z-ratio hold on the full grid? | **answered: yes** — 0.4307 / 0.4234 / 0.4411, non-monotone, spread 0.0177 at 708 windows (F3) |
+| 2 | Does the regime spread survive conformalization? | **answered on real data: yes** — Mondrian's spread is 0.063 and correctly ordered under the pre-registered design (§12b, R8) |
+| 3 | Is the h^0.639 exponent stable across regimes and tickers? | open — no live decision depends on it |
+| 4 | What is the random walk's exponent? | **answered: 0.4983** — diffusion, as a correctly specified Gaussian walk should give |
+| 5 | Is under-dispersion an artifact of window normalisation? | **answered: no** — refuted in §7a; ρ = 0.3551 against a persistence ceiling of 0.3552, control pinned at β = 1.011 ± 0.04 |
+| 6 | Does the `top_p = 1.0` CRPS worsening indicate junk mass in the untruncated tail? | open — superseded in priority by §9a, which measured the same trade-off across four temperatures |
+| 7 | Do published TSFM calibration studies state `m` and the estimator? | **open — the #254 contribution still hinges on this** |
+| 8 | Which of the four surviving candidates causes horizon under-propagation? | **open, now the central question** — quantisation bin width, the autoregressive loop, context length, training-distribution mismatch (§9a). Distinguishing them needs instrumentation inside the model: per-step token-distribution entropy, or a tokenizer swap |
+| 9 | Does fine-tuning shrink the F11 period-drift? | **open — the one quantity A6 can produce that no earlier run touched.** Not a G4 pass condition: that bar was frozen on 2026-08-09 and is not being amended. Recorded as a readout alongside the verdict |
 
-**Q5 is the one that changes plans.** If dispersion is already compressed at h = 1, part of
-the 2.26× is a tokenizer/normalisation ceiling that fine-tuning the transformer cannot
-lift — which would materially change what A4 is worth. Requires the saved forecast paths
-(now persisted; needs a regeneration run).
+**Q8 is what Q5 became.** Q5 asked whether the normalizer was responsible and §7a answered
+no; Q9 in the previous version of this table asked whether temperature was responsible and
+§9a answered no. What survives is a shortlist of four, and the honest claim for §19 remains
+**"not the sampling policy"** — ruling one candidate out is not ruling another in.
 
 ## 22. Reproduction
 
 ```powershell
-uv run pytest -q                                        # 92 tests
-uv run python phase-a/eval/calibrate.py --split test     # full grid, ~6.6 h
-uv run python phase-a/eval/calibrate.py --split test --limit 45 --sweep-top-p
+uv sync --all-groups
+./phase-a/scripts/setup_upstream.ps1     # pinned upstream commit, read-only
+uv run pytest -q                         # 249 tests
+```
+
+Three test modules — `test_resume.py`, `test_finetune.py`, `test_sampler_equivalence.py` —
+reach `eval/sampler.py`, which imports the upstream `model` package at module scope. That
+clone is gitignored (working rule 2), so without `setup_upstream.ps1` those 21 tests skip
+with a reason naming the script. `addopts = "-rs"` prints skip reasons everywhere, so the
+boundary is visible in the log rather than silently reducing the count.
+
+```powershell
+# the full grid (~90 min on a T4)
+uv run python phase-a/eval/calibrate.py --split test --batch-size 24 --checkpoint-every 5
+
+# offline analysis and diagnostics, no GPU
+uv run python phase-a/eval/run_analysis.py results/<run-dir>
+uv run python phase-a/eval/diagnose.py    results/<run-dir>
+
+# the harness pointed at any forecaster, including this project's own grids
+uv run python kronos-calibrate/kronos_calibrate.py results/<run-dir>/ensembles.npz \
+    --baseline random_walk_drift
 ```
 
 Every run writes `results/<timestamp>_<git-sha>/` containing `results.json` and
-`ensembles.npz` — the forecast paths and grid alignment, so any run can be re-analysed on
-CPU without a GPU.
+`ensembles.npz` — the forecast paths and grid alignment — so any run can be re-analysed on
+CPU without a GPU. Baseline numbers are pinned in `phase-a/eval/golden.json` against corpus
+fingerprint `0a990f9881418544`, read by both `tests/test_golden.py` and the cloud notebook's
+port check.
 
 ## 23. Literature
 
