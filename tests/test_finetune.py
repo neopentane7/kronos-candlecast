@@ -16,9 +16,21 @@ import pandas as pd
 import pytest
 
 REPO = Path(__file__).resolve().parents[1]
-sys.path[:0] = [str(REPO), str(REPO / "phase-a")]
+sys.path[:0] = [str(REPO), str(REPO / "phase-a"), str(REPO / "phase-a" / "Kronos")]
 
 torch = pytest.importorskip("torch")
+
+# train.finetune reaches eval.sampler, which imports the upstream `model` package at
+# module scope. Without the clone this module cannot even be collected.
+pytest.importorskip(
+    "model",
+    reason=(
+        "requires the upstream Kronos clone at phase-a/Kronos, created by "
+        "phase-a/scripts/setup_upstream.ps1. It is gitignored per working rule 2, so CI "
+        "never has it and these paths are exercised locally only. Documented boundary, "
+        "not a silent hole."
+    ),
+)
 
 from train.finetune import CLIP, SEQ_LEN, Config, kill_check  # noqa: E402
 

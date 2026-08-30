@@ -55,6 +55,10 @@ package = false
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+# -rs prints every skip with its reason, in CI and locally. Two modules skip when the
+# gitignored upstream clone is absent; that boundary has to be visible in the log, or a
+# developer who deletes phase-a/Kronos silently loses 21 tests and still sees "passed".
+addopts = "-rs"
 markers = [
     # Runs the real harness end to end (~1 min). Deselect with -m "not slow".
     "slow: exercises a subprocess run of the evaluation harness",

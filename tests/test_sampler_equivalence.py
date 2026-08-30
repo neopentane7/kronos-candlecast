@@ -23,6 +23,18 @@ sys.path.insert(0, str(REPO_ROOT / "phase-a" / "Kronos"))
 sys.path.insert(0, str(REPO_ROOT / "phase-a"))
 
 torch = pytest.importorskip("torch")
+# The overlay imports the upstream `model` package at module scope. On a CUDA machine
+# without the clone this errors at fixture setup rather than skipping, which reads as a
+# broken test instead of an absent dependency.
+pytest.importorskip(
+    "model",
+    reason=(
+        "requires the upstream Kronos clone at phase-a/Kronos, created by "
+        "phase-a/scripts/setup_upstream.ps1. It is gitignored per working rule 2, so CI "
+        "never has it and these paths are exercised locally only. Documented boundary, "
+        "not a silent hole."
+    ),
+)
 pytestmark = pytest.mark.skipif(not torch.cuda.is_available(), reason="no CUDA device")
 
 LOOKBACK, PRED_LEN, SAMPLES, SEED = 400, 30, 4, 1234

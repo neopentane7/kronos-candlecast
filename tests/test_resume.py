@@ -15,6 +15,19 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "phase-a"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "phase-a" / "Kronos"))
+
+# eval.sampler imports the upstream `model` package at module scope, so these tests
+# need the clone even though they never touch a GPU.
+pytest.importorskip(
+    "model",
+    reason=(
+        "requires the upstream Kronos clone at phase-a/Kronos, created by "
+        "phase-a/scripts/setup_upstream.ps1. It is gitignored per working rule 2, so CI "
+        "never has it and these paths are exercised locally only. Documented boundary, "
+        "not a silent hole."
+    ),
+)
 
 from eval.calibrate import kronos_ensemble  # noqa: E402
 
