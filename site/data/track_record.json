@@ -1649,5 +1649,33 @@
       "cumulative": 0.8584
     }
   },
-  "live": []
+  "live": [
+    {
+      "date": "2026-08-28",
+      "by_level": {
+        "0.50": {
+          "n": 180,
+          "hits": 126,
+          "tickers": 60,
+          "empirical": 0.7,
+          "nominal": 0.5
+        },
+        "0.80": {
+          "n": 180,
+          "hits": 166,
+          "tickers": 60,
+          "empirical": 0.9222,
+          "nominal": 0.8
+        },
+        "0.90": {
+          "n": 180,
+          "hits": 173,
+          "tickers": 60,
+          "empirical": 0.9611,
+          "nominal": 0.9
+        }
+      }
+    }
+  ],
+  "generated_at": "2026-08-31T19:18:46+00:00"
 }
