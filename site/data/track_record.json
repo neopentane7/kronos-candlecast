@@ -1651,31 +1651,31 @@
   },
   "live": [
     {
-      "date": "2026-09-04",
+      "date": "2026-09-07",
       "by_level": {
         "0.50": {
-          "n": 420,
-          "hits": 267,
+          "n": 480,
+          "hits": 268,
           "tickers": 60,
-          "empirical": 0.6357,
+          "empirical": 0.5583,
           "nominal": 0.5
         },
         "0.80": {
-          "n": 420,
-          "hits": 376,
+          "n": 480,
+          "hits": 403,
           "tickers": 60,
-          "empirical": 0.8952,
+          "empirical": 0.8396,
           "nominal": 0.8
         },
         "0.90": {
-          "n": 420,
-          "hits": 399,
+          "n": 480,
+          "hits": 459,
           "tickers": 60,
-          "empirical": 0.95,
+          "empirical": 0.9563,
           "nominal": 0.9
         }
       }
     }
   ],
-  "generated_at": "2026-09-04T16:39:58+00:00"
+  "generated_at": "2026-09-07T17:59:56+00:00"
 }
