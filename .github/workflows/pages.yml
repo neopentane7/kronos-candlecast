@@ -1,7 +1,10 @@
 name: Deploy site
 
-# Runs on any push that changes the app or the data it renders, so a nightly commit
-# redeploys and the site never shows a forecast older than the archive.
+# Two ways in, because one of them does not work on its own. The push trigger covers
+# human pushes. It does NOT cover the nightly job: that commits with GITHUB_TOKEN, and
+# GitHub refuses to fire workflows from such a push, so the nightly forecast dispatches
+# this workflow explicitly as its last step. Removing that dispatch silently freezes the
+# published site at the last human push.
 on:
   push:
     branches: [main]

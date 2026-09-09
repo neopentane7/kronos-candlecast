@@ -36,6 +36,10 @@ dev = [
     "ruff>=0.6",
     "pytest>=8.0",
     "pre-commit>=3.7",
+    # tests/test_workflows.py reads the Actions YAML. It was importable transitively
+    # before this line, which is not the same as being available: a test that skips when
+    # its parser is missing reports success for the wrong reason.
+    "pyyaml>=6.0",
 ]
 
 # Torch must come from the CUDA 12.1 wheel index, not PyPI (PyPI ships the

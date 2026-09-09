@@ -1651,31 +1651,239 @@
   },
   "live": [
     {
-      "date": "2026-09-08",
+      "date": "2026-08-26",
       "by_level": {
         "0.50": {
-          "n": 540,
-          "hits": 315,
+          "n": 60,
+          "hits": 34,
           "tickers": 60,
-          "empirical": 0.5833,
+          "empirical": 0.5667,
           "nominal": 0.5
         },
         "0.80": {
-          "n": 540,
-          "hits": 486,
+          "n": 60,
+          "hits": 53,
           "tickers": 60,
-          "empirical": 0.9,
+          "empirical": 0.8833,
           "nominal": 0.8
         },
         "0.90": {
-          "n": 540,
-          "hits": 522,
+          "n": 60,
+          "hits": 58,
           "tickers": 60,
           "empirical": 0.9667,
           "nominal": 0.9
         }
       }
+    },
+    {
+      "date": "2026-08-27",
+      "by_level": {
+        "0.50": {
+          "n": 120,
+          "hits": 74,
+          "tickers": 60,
+          "empirical": 0.6167,
+          "nominal": 0.5
+        },
+        "0.80": {
+          "n": 120,
+          "hits": 111,
+          "tickers": 60,
+          "empirical": 0.925,
+          "nominal": 0.8
+        },
+        "0.90": {
+          "n": 120,
+          "hits": 115,
+          "tickers": 60,
+          "empirical": 0.9583,
+          "nominal": 0.9
+        }
+      }
+    },
+    {
+      "date": "2026-08-28",
+      "by_level": {
+        "0.50": {
+          "n": 180,
+          "hits": 126,
+          "tickers": 60,
+          "empirical": 0.7,
+          "nominal": 0.5
+        },
+        "0.80": {
+          "n": 180,
+          "hits": 166,
+          "tickers": 60,
+          "empirical": 0.9222,
+          "nominal": 0.8
+        },
+        "0.90": {
+          "n": 180,
+          "hits": 173,
+          "tickers": 60,
+          "empirical": 0.9611,
+          "nominal": 0.9
+        }
+      }
+    },
+    {
+      "date": "2026-09-01",
+      "by_level": {
+        "0.50": {
+          "n": 240,
+          "hits": 142,
+          "tickers": 60,
+          "empirical": 0.5917,
+          "nominal": 0.5
+        },
+        "0.80": {
+          "n": 240,
+          "hits": 211,
+          "tickers": 60,
+          "empirical": 0.8792,
+          "nominal": 0.8
+        },
+        "0.90": {
+          "n": 240,
+          "hits": 224,
+          "tickers": 60,
+          "empirical": 0.9333,
+          "nominal": 0.9
+        }
+      }
+    },
+    {
+      "date": "2026-09-02",
+      "by_level": {
+        "0.50": {
+          "n": 300,
+          "hits": 170,
+          "tickers": 60,
+          "empirical": 0.5667,
+          "nominal": 0.5
+        },
+        "0.80": {
+          "n": 300,
+          "hits": 255,
+          "tickers": 60,
+          "empirical": 0.85,
+          "nominal": 0.8
+        },
+        "0.90": {
+          "n": 300,
+          "hits": 284,
+          "tickers": 60,
+          "empirical": 0.9467,
+          "nominal": 0.9
+        }
+      }
+    },
+    {
+      "date": "2026-09-03",
+      "by_level": {
+        "0.50": {
+          "n": 360,
+          "hits": 220,
+          "tickers": 60,
+          "empirical": 0.6111,
+          "nominal": 0.5
+        },
+        "0.80": {
+          "n": 360,
+          "hits": 323,
+          "tickers": 60,
+          "empirical": 0.8972,
+          "nominal": 0.8
+        },
+        "0.90": {
+          "n": 360,
+          "hits": 344,
+          "tickers": 60,
+          "empirical": 0.9556,
+          "nominal": 0.9
+        }
+      }
+    },
+    {
+      "date": "2026-09-04",
+      "by_level": {
+        "0.50": {
+          "n": 420,
+          "hits": 267,
+          "tickers": 60,
+          "empirical": 0.6357,
+          "nominal": 0.5
+        },
+        "0.80": {
+          "n": 420,
+          "hits": 376,
+          "tickers": 60,
+          "empirical": 0.8952,
+          "nominal": 0.8
+        },
+        "0.90": {
+          "n": 420,
+          "hits": 399,
+          "tickers": 60,
+          "empirical": 0.95,
+          "nominal": 0.9
+        }
+      }
+    },
+    {
+      "date": "2026-09-07",
+      "by_level": {
+        "0.50": {
+          "n": 384,
+          "hits": 207,
+          "tickers": 48,
+          "empirical": 0.5391,
+          "nominal": 0.5
+        },
+        "0.80": {
+          "n": 384,
+          "hits": 324,
+          "tickers": 48,
+          "empirical": 0.8438,
+          "nominal": 0.8
+        },
+        "0.90": {
+          "n": 384,
+          "hits": 370,
+          "tickers": 48,
+          "empirical": 0.9635,
+          "nominal": 0.9
+        }
+      }
+    },
+    {
+      "date": "2026-09-08",
+      "by_level": {
+        "0.50": {
+          "n": 441,
+          "hits": 256,
+          "tickers": 49,
+          "empirical": 0.5805,
+          "nominal": 0.5
+        },
+        "0.80": {
+          "n": 441,
+          "hits": 394,
+          "tickers": 49,
+          "empirical": 0.8934,
+          "nominal": 0.8
+        },
+        "0.90": {
+          "n": 441,
+          "hits": 423,
+          "tickers": 49,
+          "empirical": 0.9592,
+          "nominal": 0.9
+        }
+      }
     }
   ],
-  "generated_at": "2026-09-08T16:54:50+00:00"
+  "generated_at": "2026-09-09T07:59:52+00:00"
 }
