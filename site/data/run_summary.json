@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-09-10T16:44:51+00:00",
-  "forecast_date": "2026-09-10",
+  "generated_at": "2026-09-11T16:49:40+00:00",
+  "forecast_date": "2026-09-11",
   "mode": "live",
   "backfilled": false,
   "engine": "rw_drift",
@@ -9,36 +9,36 @@
   "aci": {
     "gamma": 0.005,
     "provisional": false,
-    "updates": 248355,
+    "updates": 250515,
     "clamped": 9,
-    "scored": 1980,
-    "covered": 1553,
-    "coverage": 0.7843,
+    "scored": 2160,
+    "covered": 1649,
+    "coverage": 0.7634,
     "by_level": {
       "0.50": {
-        "n": 660,
-        "hits": 356,
+        "n": 720,
+        "hits": 359,
         "tickers": 60,
-        "empirical": 0.5394,
+        "empirical": 0.4986,
         "nominal": 0.5
       },
       "0.80": {
-        "n": 660,
-        "hits": 570,
+        "n": 720,
+        "hits": 611,
         "tickers": 60,
-        "empirical": 0.8636,
+        "empirical": 0.8486,
         "nominal": 0.8
       },
       "0.90": {
-        "n": 660,
-        "hits": 627,
+        "n": 720,
+        "hits": 679,
         "tickers": 60,
-        "empirical": 0.95,
+        "empirical": 0.9431,
         "nominal": 0.9
       }
     },
     "tickers": 60
   },
   "split_conformal_50": 0.9752044008789673,
-  "wall_seconds": 12.9
+  "wall_seconds": 22.6
 }
