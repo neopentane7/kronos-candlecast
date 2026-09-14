@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-11T16:49:40+00:00",
+  "generated_at": "2026-09-14T18:16:00+00:00",
   "engine": "rw_drift",
   "contract_version": 3,
   "horizon": 30,
@@ -70,7 +70,7 @@
   "aci": {
     "gamma": 0.005,
     "provisional": false,
-    "updates": 250515,
+    "updates": 252675,
     "clamped": 9,
     "scored": 2160,
     "covered": 1649,

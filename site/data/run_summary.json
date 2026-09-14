@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-11T16:49:40+00:00",
+  "generated_at": "2026-09-14T18:16:00+00:00",
   "forecast_date": "2026-09-11",
   "mode": "live",
   "backfilled": false,
@@ -9,7 +9,7 @@
   "aci": {
     "gamma": 0.005,
     "provisional": false,
-    "updates": 250515,
+    "updates": 252675,
     "clamped": 9,
     "scored": 2160,
     "covered": 1649,
@@ -40,5 +40,5 @@
     "tickers": 60
   },
   "split_conformal_50": 0.9752044008789673,
-  "wall_seconds": 22.6
+  "wall_seconds": 15.0
 }
