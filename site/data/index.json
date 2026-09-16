@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-15T17:24:19+00:00",
+  "generated_at": "2026-09-16T17:23:05+00:00",
   "engine": "rw_drift",
   "contract_version": 3,
   "horizon": 30,
@@ -70,31 +70,31 @@
   "aci": {
     "gamma": 0.005,
     "provisional": false,
-    "updates": 255015,
-    "clamped": 9,
-    "scored": 2340,
-    "covered": 1468,
-    "coverage": 0.6274,
+    "updates": 257535,
+    "clamped": 10,
+    "scored": 2520,
+    "covered": 1863,
+    "coverage": 0.7393,
     "by_level": {
       "0.50": {
-        "n": 780,
-        "hits": 262,
+        "n": 840,
+        "hits": 382,
         "tickers": 60,
-        "empirical": 0.3359,
+        "empirical": 0.4548,
         "nominal": 0.5
       },
       "0.80": {
-        "n": 780,
-        "hits": 535,
+        "n": 840,
+        "hits": 694,
         "tickers": 60,
-        "empirical": 0.6859,
+        "empirical": 0.8262,
         "nominal": 0.8
       },
       "0.90": {
-        "n": 780,
-        "hits": 671,
+        "n": 840,
+        "hits": 787,
         "tickers": 60,
-        "empirical": 0.8603,
+        "empirical": 0.9369,
         "nominal": 0.9
       }
     },

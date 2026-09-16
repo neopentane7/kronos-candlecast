@@ -337,6 +337,32 @@
           "nominal": 0.9
         }
       }
+    },
+    {
+      "date": "2026-09-16",
+      "by_level": {
+        "0.50": {
+          "n": 840,
+          "hits": 382,
+          "tickers": 60,
+          "empirical": 0.4548,
+          "nominal": 0.5
+        },
+        "0.80": {
+          "n": 840,
+          "hits": 694,
+          "tickers": 60,
+          "empirical": 0.8262,
+          "nominal": 0.8
+        },
+        "0.90": {
+          "n": 840,
+          "hits": 787,
+          "tickers": 60,
+          "empirical": 0.9369,
+          "nominal": 0.9
+        }
+      }
     }
   ],
   "rebuilt_from": "pipeline/archive_data"
