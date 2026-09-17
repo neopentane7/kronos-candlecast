@@ -363,6 +363,32 @@
           "nominal": 0.9
         }
       }
+    },
+    {
+      "date": "2026-09-17",
+      "by_level": {
+        "0.50": {
+          "n": 900,
+          "hits": 494,
+          "tickers": 60,
+          "empirical": 0.5489,
+          "nominal": 0.5
+        },
+        "0.80": {
+          "n": 900,
+          "hits": 783,
+          "tickers": 60,
+          "empirical": 0.87,
+          "nominal": 0.8
+        },
+        "0.90": {
+          "n": 900,
+          "hits": 870,
+          "tickers": 60,
+          "empirical": 0.9667,
+          "nominal": 0.9
+        }
+      }
     }
   ],
   "rebuilt_from": "pipeline/archive_data"
